@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --light-color: #ecf0f1;
+    --dark-color: #34495e;
+    --danger-color: #e74c3c;
+    --success-color: #2ecc71;
+  }
+  
+  body {
+    font-family: 'poppins', sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Header */
+  .site-header {
+    background-color: var(--secondary-color);
+    padding: 0.5rem 0;
+    color: white;
+  }
+  
+  .site-header .navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    background-color: var(--secondary-color);
+    min-height: calc(100vh - 58px);
+    color: white;
+    transition: all 0.3s;
+  }
+  
+  .sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.8rem 1rem;
+    border-left: 4px solid transparent;
+  }
+  
+  .sidebar .nav-link:hover, 
+  .sidebar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-left: 4px solid var(--primary-color);
+  }
+  
+  .sidebar .nav-link i {
+    margin-right: 10px;
+  }
+  
+  /* Dashboard */
+  .dashboard-stats .card {
+    border-left: 4px solid var(--primary-color);
+    transition: transform 0.3s;
+  }
+  
+  .dashboard-stats .card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .stat-icon {
+    font-size: 2rem;
+    opacity: 0.7;
+  }
+
+  
+  .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+  }
+  
+  /* Footer */
+  .site-footer {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 1rem 0;
+    margin-top: auto;
+  }
+  
+  /* Content Area */
+  .content {
+    padding: 20px;
+    flex: 1;
+  }
+  
+  /* Error and Success messages */
+  .alert-danger {
+    background-color: #fadbd8;
+    border-color: var(--danger-color);
+    color: #943126;
+  }
+  
+  .alert-success {
+    background-color: #d4efdf;
+    border-color: var(--success-color);
+    color: #196f3d;
+  }
