@@ -2,6 +2,7 @@
 ob_start();
 require_once '../config/db.php';
 require_once '../vendor/autoload.php';
+
 requireLogin();
 
 // Validate report ID
@@ -21,12 +22,11 @@ if (!$device) {
     exit;
 }
 
-// Calculate different time periods
-$oneDayAgo = date('Y-m-d', strtotime('-1 day'));
+// Calculate date range
 $sevenDaysAgo = date('Y-m-d', strtotime('-7 days'));
-$thirtyDaysAgo = date('Y-m-d', strtotime('-30 days'));
+$today = date('Y-m-d');
 
-// Get daily stats (for detailed table)
+// Get daily stats for last 7 days
 $stmt = $conn->prepare(
     "SELECT DATE(created_at) AS log_date, 
             AVG(latency) AS avg_latency,
@@ -35,74 +35,40 @@ $stmt = $conn->prepare(
             SUM(CASE WHEN status='offline' THEN 1 ELSE 0 END) AS offline_count,
             COUNT(*) AS total_checks
      FROM ping_logs
-     WHERE ip_id = ? AND created_at >= ?
+     WHERE ip_id = ? AND DATE(created_at) >= ? AND DATE(created_at) <= ?
      GROUP BY DATE(created_at)
-     ORDER BY log_date DESC"
+     ORDER BY log_date ASC"
 );
-$stmt->execute([$report_id, $thirtyDaysAgo]);
+$stmt->execute([$report_id, $sevenDaysAgo, $today]);
 $dailyStats = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculate overall metrics for different periods
-function calculateMetrics($conn, $ip_id, $startDate) {
-    $stmt = $conn->prepare(
-        "SELECT COUNT(*) AS total_checks,
-                SUM(CASE WHEN status='offline' THEN 1 ELSE 0 END) AS offline_count,
-                AVG(latency) AS avg_latency,
-                MAX(latency) AS max_latency
-         FROM ping_logs
-         WHERE ip_id = ? AND created_at >= ?"
-    );
-    $stmt->execute([$ip_id, $startDate]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    $uptime = $result['total_checks'] > 0 
-            ? round(($result['total_checks'] - $result['offline_count']) / $result['total_checks'] * 100, 2)
-            : 0;
-            
-    return [
-        'uptime' => $uptime,
-        'avg_latency' => round($result['avg_latency'], 2),
-        'max_latency' => round($result['max_latency'], 2),
-        'checks' => $result['total_checks'],
-        'offline' => $result['offline_count']
-    ];
-}
-
-$dailyMetrics = calculateMetrics($conn, $report_id, $oneDayAgo);
-$weeklyMetrics = calculateMetrics($conn, $report_id, $sevenDaysAgo);
-$monthlyMetrics = calculateMetrics($conn, $report_id, $thirtyDaysAgo);
-
-// Get hourly data for today's chart
+// Calculate overall weekly metrics
 $stmt = $conn->prepare(
-    "SELECT HOUR(created_at) AS hour,
-            AVG(latency) AS avg_latency,
+    "SELECT COUNT(*) AS total_checks,
             SUM(CASE WHEN status='offline' THEN 1 ELSE 0 END) AS offline_count,
-            COUNT(*) AS total_checks
+            AVG(latency) AS avg_latency,
+            MIN(latency) AS min_latency,
+            MAX(latency) AS max_latency
      FROM ping_logs
-     WHERE ip_id = ? AND DATE(created_at) = CURDATE()
-     GROUP BY HOUR(created_at)
-     ORDER BY hour ASC"
+     WHERE ip_id = ? AND DATE(created_at) >= ?"
 );
-$stmt->execute([$report_id]);
-$hourlyData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$stmt->execute([$report_id, $sevenDaysAgo]);
+$weeklyMetrics = $stmt->fetch(PDO::FETCH_ASSOC);
+
+$weeklyUptime = $weeklyMetrics['total_checks'] > 0 
+        ? round(($weeklyMetrics['total_checks'] - $weeklyMetrics['offline_count']) / $weeklyMetrics['total_checks'] * 100, 2)
+        : 0;
 
 // Initialize TCPDF
 $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
 $pdf->SetCreator('IT Network Monitoring');
 $pdf->SetAuthor('IT Department');
-$pdf->SetTitle('Network Device Status Report');
+$pdf->SetTitle('Weekly Network Device Status Report');
 $pdf->setPrintHeader(false);
 $pdf->setPrintFooter(false);
 $pdf->SetMargins(10, 10, 10);
 $pdf->SetAutoPageBreak(TRUE, 10);
 $pdf->AddPage();
-
-// Define colors
-$colorOnline = '#4CAF50';
-$colorOffline = '#F44336';
-$colorWarning = '#FF9800';
-$colorHeader = '#2c3e50';
-$colorSubheader = '#34495e';
 
 // Report Header
 $html = '
@@ -119,14 +85,14 @@ $html = '
     table.stats td, table.stats th {border: 1px solid #bdc3c7; padding: 5px; text-align: center;}
     table.info td, table.info th {border: 1px solid #bdc3c7; padding: 5px;}
     table.info th {width: 30%; background-color: #ecf0f1; text-align: right;}
-    .metrics-box {width: 30%; float: left; margin: 0 1.5%; text-align: center; border: 1px solid #ddd; padding: 10px;}
+    .metrics-box {width: 94%; margin: 10px auto; text-align: center; border: 1px solid #ddd; padding: 10px;}
     .metrics-title {font-weight: bold; margin-bottom: 5px;}
-    .metrics-value {font-size: 20pt; margin: 10px 0;}
+    .metrics-value {font-size: 24pt; margin: 10px 0;}
     .clear {clear: both;}
 </style>
 
-<h1>Network Device Status Report</h1>
-<p class="subtitle">Generated on ' . date('F j, Y') . ' at ' . date('H:i') . '</p>
+<h1>Weekly Network Device Status Report</h1>
+<p class="subtitle">Generated on ' . date('F j, Y') . ' for period ' . date('M j', strtotime($sevenDaysAgo)) . ' - ' . date('M j, Y') . '</p>
 
 <div class="section">
     <h2>Device Information</h2>
@@ -151,53 +117,33 @@ $html = '
             strtoupper($device['status']) . '</td>
     </tr>
     <tr>
-        <th>Current Latency</th>
-        <td>' . number_format($device['latency'], 2) . ' ms</td>
-    </tr>
-    <tr>
         <th>Monitoring Since</th>
         <td>' . date("F j, Y", strtotime($device['date'])) . '</td>
     </tr>
 </table>
 
 <div class="section">
-    <h2>Performance Overview</h2>
+    <h2>Weekly Performance Summary</h2>
 </div>';
 
-// Performance summary boxes
+// Weekly metrics box
 $html .= '
-<div class="metrics-box">
-    <div class="metrics-title">DAILY UPTIME</div>
-    <div class="metrics-value ' . ($dailyMetrics['uptime'] >= 99.9 ? 'status-good' : ($dailyMetrics['uptime'] >= 95 ? 'status-warning' : 'status-critical')) . '">
-        ' . $dailyMetrics['uptime'] . '%
-    </div>
-    <div>Avg: ' . $dailyMetrics['avg_latency'] . ' ms</div>
-</div>
-
 <div class="metrics-box">
     <div class="metrics-title">WEEKLY UPTIME</div>
-    <div class="metrics-value ' . ($weeklyMetrics['uptime'] >= 99.9 ? 'status-good' : ($weeklyMetrics['uptime'] >= 95 ? 'status-warning' : 'status-critical')) . '">
-        ' . $weeklyMetrics['uptime'] . '%
+    <div class="metrics-value ' . ($weeklyUptime >= 99.9 ? 'status-good' : ($weeklyUptime >= 95 ? 'status-warning' : 'status-critical')) . '">
+        ' . $weeklyUptime . '%
     </div>
-    <div>Avg: ' . $weeklyMetrics['avg_latency'] . ' ms</div>
-</div>
-
-<div class="metrics-box">
-    <div class="metrics-title">MONTHLY UPTIME</div>
-    <div class="metrics-value ' . ($monthlyMetrics['uptime'] >= 99.9 ? 'status-good' : ($monthlyMetrics['uptime'] >= 95 ? 'status-warning' : 'status-critical')) . '">
-        ' . $monthlyMetrics['uptime'] . '%
-    </div>
-    <div>Avg: ' . $monthlyMetrics['avg_latency'] . ' ms</div>
-</div>
-
-<div class="clear"></div>
-
-<div class="section">
-    <h2>Detailed Performance Stats (Last 30 Days)</h2>
+    <div>Average Latency: ' . round($weeklyMetrics['avg_latency'], 2) . ' ms</div>
+    <div>Min Latency: ' . round($weeklyMetrics['min_latency'], 2) . ' ms | Max Latency: ' . round($weeklyMetrics['max_latency'], 2) . ' ms</div>
+    <div>Total Checks: ' . $weeklyMetrics['total_checks'] . ' | Failed Checks: ' . $weeklyMetrics['offline_count'] . '</div>
 </div>';
 
-// Table for daily stats
+// Daily stats table
 $html .= '
+<div class="section">
+    <h2>Daily Performance Statistics</h2>
+</div>
+
 <table class="stats">
     <tr>
         <th>Date</th>
@@ -210,21 +156,21 @@ $html .= '
     </tr>';
 
 foreach ($dailyStats as $day) {
-    $uptime = $day['total_checks'] > 0 
+    $dayUptime = $day['total_checks'] > 0 
             ? round(($day['total_checks'] - $day['offline_count']) / $day['total_checks'] * 100, 2)
             : 0;
             
-    $uptimeClass = $uptime >= 99.9 ? 'status-good' : ($uptime >= 95 ? 'status-warning' : 'status-critical');
+    $uptimeClass = $dayUptime >= 99.9 ? 'status-good' : ($dayUptime >= 95 ? 'status-warning' : 'status-critical');
     
     $html .= '
     <tr>
-        <td>' . date('M j, Y', strtotime($day['log_date'])) . '</td>
+        <td>' . date('D, M j', strtotime($day['log_date'])) . '</td>
         <td>' . number_format($day['avg_latency'], 2) . ' ms</td>
         <td>' . number_format($day['min_latency'], 2) . ' ms</td>
         <td>' . number_format($day['max_latency'], 2) . ' ms</td>
         <td>' . $day['offline_count'] . '</td>
         <td>' . $day['total_checks'] . '</td>
-        <td class="' . $uptimeClass . '">' . $uptime . '%</td>
+        <td class="' . $uptimeClass . '">' . $dayUptime . '%</td>
     </tr>';
 }
 
@@ -233,28 +179,28 @@ $html .= '</table>';
 // Status summary
 $html .= '
 <div class="section">
-    <h2>Status Summary</h2>
+    <h2>Weekly Status Summary</h2>
 </div>';
 
-if ($monthlyMetrics['uptime'] < 95) {
+if ($weeklyUptime < 95) {
     $html .= '
     <div style="border-left: 5px solid #F44336; padding: 10px; background-color: #FFEBEE;">
-        <strong>Critical Issue:</strong> Device uptime is below acceptable threshold. Recommend immediate investigation.
+        <strong>Critical Issue:</strong> Device uptime is below acceptable threshold for the week. Recommend immediate investigation.
     </div>';
-} elseif ($monthlyMetrics['uptime'] < 99) {
+} elseif ($weeklyUptime < 99) {
     $html .= '
     <div style="border-left: 5px solid #FF9800; padding: 10px; background-color: #FFF3E0;">
-        <strong>Warning:</strong> Device experiencing intermittent connectivity issues. Schedule maintenance.
+        <strong>Warning:</strong> Device experiencing intermittent connectivity issues this week. Schedule maintenance.
     </div>';
 } else {
     $html .= '
     <div style="border-left: 5px solid #4CAF50; padding: 10px; background-color: #E8F5E9;">
-        <strong>Good Status:</strong> Device operating within normal parameters.
+        <strong>Good Status:</strong> Device operating within normal parameters this week.
     </div>';
 }
 
 // Add a section for outage incidents if any
-if ($monthlyMetrics['offline'] > 0) {
+if ($weeklyMetrics['offline_count'] > 0) {
     $html .= '
     <div class="section">
         <h2>Notable Incidents</h2>
@@ -265,13 +211,13 @@ if ($monthlyMetrics['offline'] > 0) {
         "SELECT DATE(created_at) AS outage_date, 
                 COUNT(*) AS consecutive_failures
          FROM ping_logs
-         WHERE ip_id = ? AND status = 'offline' AND created_at >= ?
+         WHERE ip_id = ? AND status = 'offline' AND DATE(created_at) >= ?
          GROUP BY DATE(created_at)
-         HAVING consecutive_failures >= 3
+         HAVING consecutive_failures >= 2
          ORDER BY consecutive_failures DESC
          LIMIT 3"
     );
-    $stmt->execute([$report_id, $thirtyDaysAgo]);
+    $stmt->execute([$report_id, $sevenDaysAgo]);
     $outages = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     if (count($outages) > 0) {
@@ -288,7 +234,7 @@ if ($monthlyMetrics['offline'] > 0) {
             
             $html .= '
             <tr>
-                <td>' . date('M j, Y', strtotime($outage['outage_date'])) . '</td>
+                <td>' . date('D, M j, Y', strtotime($outage['outage_date'])) . '</td>
                 <td>' . $outage['consecutive_failures'] . '</td>
                 <td class="' . $severityClass . '">' . $severity . '</td>
             </tr>';
@@ -314,6 +260,6 @@ $pdf->writeHTML($html, true, false, true, false, '');
 $pdf->setFooterFont(Array('helvetica', '', 8));
 $pdf->setFooterMargin(5);
 
-
 // Output PDF
-$pdf->Output('network_device_report_' . $report_id . '.pdf', 'I');
+$pdf->Output('weekly_network_report_' . $report_id . '.pdf', 'I');
+?>

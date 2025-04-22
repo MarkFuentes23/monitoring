@@ -204,11 +204,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             if ($res['success']) {
                 $_SESSION['success'] = $res['message'];
-                header("Location: /views/dashboard.php");
+                header("Location: /login.php");
                 exit;
             } else {
                 $_SESSION['error'] = $res['message'];
-                header("Location: /views/register.php");
+                header("Location: /register.php");
                 exit;
             }
 
@@ -220,6 +220,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 sanitize($_POST['location'])
             );
             $_SESSION[$res['success'] ? 'success' : 'error'] = $res['message'];
+            header("Location: /views/monitoring.php");
+            exit;
+            
+        case 'add_location_category':
+            $location = !empty($_POST['location']) ? sanitize($_POST['location']) : null;
+            $category = !empty($_POST['category']) ? sanitize($_POST['category']) : null;
+            
+            if (!$location && !$category) {
+                $_SESSION['error'] = "Please provide at least a location or category";
+                header("Location: /views/monitoring.php");
+                exit;
+            }
+            
+            try {
+                if ($location) {
+                    $stmt = $conn->prepare("INSERT INTO locations (location) VALUES (:location)");
+                    $stmt->execute([':location' => $location]);
+                }
+                
+                if ($category) {
+                    $stmt = $conn->prepare("INSERT INTO categories (category) VALUES (:category)");
+                    $stmt->execute([':category' => $category]);
+                }
+                
+                $_SESSION['success'] = "Added successfully!";
+            } catch (PDOException $e) {
+                $_SESSION['error'] = "Database error: " . $e->getMessage();
+            }
+            
             header("Location: /views/monitoring.php");
             exit;
 

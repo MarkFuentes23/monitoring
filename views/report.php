@@ -67,8 +67,14 @@ include '../includes/header.php';
           <p><strong>Location:</strong> <?= htmlspecialchars($device_data['location']) ?></p>
         </div>
         <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="report_pdf.php?report=<?= urlencode($report_id) ?>" target="_blank" class="btn btn-sm btn-primary ms-2">
-          <i class="fas fa-print"></i> Print Report
+        <a href="daily_report.php?report=<?= urlencode($report_id) ?>" target="_blank" class="btn btn-sm btn-primary ms-2">
+          <i class="fas fa-print"></i> Print daily Report
+        </a>
+        <a href="weekly_report.php?report=<?= urlencode($report_id) ?>" target="_blank" class="btn btn-sm btn-primary ms-2">
+          <i class="fas fa-print"></i> Print weekly Report
+        </a>
+        <a href="monthly_report.php?report=<?= urlencode($report_id) ?>" target="_blank" class="btn btn-sm btn-primary ms-2" style="margin-right: 10px;">
+          <i class="fas fa-print"></i> Print monthly Report
         </a>
           <a href="monitoring.php" class="btn btn-sm btn-outline-secondary">
             <i class="fas fa-arrow-left"></i> Back to Monitoring
