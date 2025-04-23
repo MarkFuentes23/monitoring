@@ -93,24 +93,25 @@ function registerUser($username, $email, $password, $confirm_password) {
 
 // --- Data Table Functions ---
 
-function addDataRow($date, $ip, $description, $location) {
+function addDataRow($date, $ip, $description, $location, $category) {
     global $conn;
     $response = ['success' => false, 'message' => ''];
 
-    if (!$date || !$ip || !$description || !$location) {
+    if (!$date || !$ip || !$description || !$location || !$category) {
         $response['message'] = "All fields are required.";
         return $response;
     }
 
     try {
-        $sql  = "INSERT INTO add_ip (date, ip_address, description, location)
-                 VALUES (:date, :ip, :desc, :loc)";
+        $sql  = "INSERT INTO add_ip (date, ip_address, description, location, category)
+                 VALUES (:date, :ip, :desc, :loc, :cat)";
         $stmt = $conn->prepare($sql);
         $stmt->execute([
             ':date' => $date,
             ':ip'   => $ip,
             ':desc' => $description,
             ':loc'  => $location,
+            ':cat'  => $category
         ]);
         $newId = $conn->lastInsertId();
 
@@ -217,7 +218,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_POST['date'],
                 sanitize($_POST['ip_address']),
                 sanitize($_POST['description']),
-                sanitize($_POST['location'])
+                sanitize($_POST['location']),
+                sanitize($_POST['category'])  // Added category parameter
             );
             $_SESSION[$res['success'] ? 'success' : 'error'] = $res['message'];
             header("Location: /views/monitoring.php");

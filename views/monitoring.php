@@ -1,5 +1,5 @@
 <?php
-// views/monitoring.php
+//monitoring.php
 require_once '../config/db.php';
 requireLogin();
 
@@ -12,6 +12,7 @@ $dataRows = $conn
 $locations = $conn->query("SELECT * FROM locations")->fetchAll(PDO::FETCH_ASSOC);
 $categories = $conn->query("SELECT * FROM categories")->fetchAll(PDO::FETCH_ASSOC);
 
+// Organize data by category
 $categoryData = [];
 foreach ($dataRows as $row) {
   $category = !empty($row['category']) ? $row['category'] : 'Uncategorized';
@@ -21,42 +22,29 @@ foreach ($dataRows as $row) {
   $categoryData[$category][] = $row;
 }
 
-$standardCategories = ['Internet', 'CCTV', 'LAN', 'Server'];
-foreach ($standardCategories as $cat) {
-  if (!isset($categoryData[$cat])) {
-    $categoryData[$cat] = [];
+// Make sure we have entries for all categories from the database
+foreach ($categories as $cat) {
+  $categoryName = $cat['category'];
+  if (!isset($categoryData[$categoryName])) {
+    $categoryData[$categoryName] = [];
   }
+}
+
+// Add uncategorized if needed
+if (!isset($categoryData['Uncategorized'])) {
+  $categoryData['Uncategorized'] = [];
 }
 ?>
 <?php include '../includes/header.php'; ?>
+<?php include '../includes/loader.php'; ?>
 
 
-<div class="container-fluid">
+<div class="container">
   <div class="row">
     <?php include '../includes/sidebar.php'; ?>
+     
 
-    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
-      <div id="loader" class="d-none">
-        <div class="loader-container">
-          <div class="spinner-wrapper">
-            <div class="spinner-ring"></div>
-            <div class="spinner-ring"></div>
-            <div class="spinner-ring"></div>
-          </div>
-          <div id="loader-text">Loading... 0s</div>
-          <div class="progress-container">
-            <div class="progress-bar"></div>
-          </div>
-          <div class="loader-dots">
-            <div class="loader-dot"></div>
-            <div class="loader-dot"></div>
-            <div class="loader-dot"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="d-flex justify-content-between align-items-center 
-                  pt-3 pb-2 mb-3 border-bottom">
+      <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Monitoring</h1>
         <div class="btn-toolbar mb-2 mb-md-0 align-items-center">
 
@@ -65,12 +53,12 @@ foreach ($standardCategories as $cat) {
             <button class="btn btn-sm btn-outline-secondary"
                     data-bs-toggle="modal"
                     data-bs-target="#addModal">
-              <i class="fas fa-plus"></i> Add
+              <i class="fas fa-plus"></i> Add New IP
             </button>
             <button class="btn btn-sm btn-outline-secondary"
                     data-bs-toggle="modal"
                     data-bs-target="#addLocationCategoryModal">
-              <i class="fas fa-tags"></i> Add L/C
+              <i class="fas fa-tags"></i> Add New Location/Categories
             </button>
             <button id="refreshAll"
                     class="btn btn-sm btn-outline-primary">
@@ -104,254 +92,106 @@ foreach ($standardCategories as $cat) {
         </div>
       <?php endif; ?>
 
-      <!-- Two tables per row using row/col system -->
+      <!-- Dynamic category tables using row/col system -->
       <div class="row">
-        <!-- First row: Internet and CCTV -->
-        <div class="col-md-6 mb-3">
-          <div class="card h-100">
-            <div class="card-header bg-primary text-white py-2">
-              <h5 class="mb-0 fs-6">Internet</h5>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table id="internet-table" class="table table-bordered table-hover table-sm datatable mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>IP</th>
-                      <th>Description</th>
-                      <th>Location</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php if (!empty($categoryData['Internet'])): ?>
-                      <?php foreach($categoryData['Internet'] as $row): ?>
-                      <tr class="clickable-row" data-href="report.php?report=<?= $row['id'] ?>">
-                        <td><?= date("M d, Y", strtotime($row['date'])) ?></td>
-                        <td><?= htmlspecialchars($row['ip_address']) ?></td>
-                        <td><?= htmlspecialchars($row['description']) ?></td>
-                        <td><?= htmlspecialchars($row['location']) ?></td>
-                        <td id="status-internet-<?= $row['id'] ?>">
-                        <span class="badge badge-smaller <?= $row['status'] === 'online' ? 'bg-success' : 'bg-danger' ?>">
-                          <?= ucfirst($row['status']) ?>
-                        </span>
-                        <span class="badge badge-smaller <?= $row['latency'] >= 100 ? 'bg-warning' : 'bg-info' ?>">
-                          <?= $row['latency'] ?> ms
-                        </span>
-
-                        </td>
-                        <td>
-                          <div class="btn-group">
-                            <button type="button"
-                                    class="btn btn-sm btn-primary view-details btn-xs"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#dataModal"
-                                    data-date="<?= htmlspecialchars($row['date']) ?>"
-                                    data-ip="<?= htmlspecialchars($row['ip_address']) ?>"
-                                    data-description="<?= htmlspecialchars($row['description']) ?>"
-                                    data-location="<?= htmlspecialchars($row['location']) ?>"
-                                    data-category="<?= htmlspecialchars($row['category']) ?>">
-                              View
-                            </button>
-                            <a href="report.php?report=<?= $row['id'] ?>"
-                               class="btn btn-sm btn-success btn-xs">Report</a>
-                          </div>
-                        </td>
-                      </tr>
-                      <?php endforeach; ?>
-                    <?php endif; ?>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
+        <?php 
+        // Define colors for common categories (add more as needed)
+        $categoryColors = [
+          'Internet' => 'primary',
+          'CCTV' => 'success',
+          'LAN' => 'info',
+          'Server' => 'warning',
+          'Uncategorized' => 'secondary'
+        ];
         
-        <div class="col-md-6 mb-3">
-          <div class="card h-100">
-            <div class="card-header bg-success text-white py-2">
-              <h5 class="mb-0 fs-6">CCTV</h5>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table id="cctv-table" class="table table-bordered table-hover table-sm datatable mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>IP</th>
-                      <th>Description</th>
-                      <th>Location</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php if (!empty($categoryData['CCTV'])): ?>
-                      <?php foreach($categoryData['CCTV'] as $row): ?>
-                      <tr class="clickable-row" data-href="report.php?report=<?= $row['id'] ?>">
-                        <td><?= date("M d, Y", strtotime($row['date'])) ?></td>
-                        <td><?= htmlspecialchars($row['ip_address']) ?></td>
-                        <td><?= htmlspecialchars($row['description']) ?></td>
-                        <td><?= htmlspecialchars($row['location']) ?></td>
-                        <td id="status-cctv-<?= $row['id'] ?>">
-                          <span class="badge badge-smaller <?= $row['status'] === 'online' ? 'bg-success' : 'bg-danger' ?>">
-                            <?= ucfirst($row['status']) ?>
-                          </span>
-                          <span class="badge badge-smaller <?= $row['latency'] >= 100 ? 'bg-warning' : 'bg-info' ?>">
-                            <?= $row['latency'] ?> ms
-                          </span>
-                        </td>
-                        <td>
-                          <div class="btn-group">
-                            <button type="button"
-                                    class="btn btn-sm btn-primary view-details btn-xs"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#dataModal"
-                                    data-date="<?= htmlspecialchars($row['date']) ?>"
-                                    data-ip="<?= htmlspecialchars($row['ip_address']) ?>"
-                                    data-description="<?= htmlspecialchars($row['description']) ?>"
-                                    data-location="<?= htmlspecialchars($row['location']) ?>"
-                                    data-category="<?= htmlspecialchars($row['category']) ?>">
-                              View
-                            </button>
-                            <a href="report.php?report=<?= $row['id'] ?>"
-                               class="btn btn-sm btn-success btn-xs">Report</a>
-                          </div>
-                        </td>
-                      </tr>
-                      <?php endforeach; ?>
-                    <?php endif; ?>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
+        // Counter to track position
+        $counter = 0;
         
-        <!-- Second row: LAN and Server -->
-        <div class="col-md-6 mb-3">
-          <div class="card h-100">
-            <div class="card-header bg-info text-white py-2">
-              <h5 class="mb-0 fs-6">LAN</h5>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table id="lan-table" class="table table-bordered table-hover table-sm datatable mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>IP</th>
-                      <th>Description</th>
-                      <th>Location</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php if (!empty($categoryData['LAN'])): ?>
-                      <?php foreach($categoryData['LAN'] as $row): ?>
-                      <tr class="clickable-row" data-href="report.php?report=<?= $row['id'] ?>">
-                        <td><?= date("M d, Y", strtotime($row['date'])) ?></td>
-                        <td><?= htmlspecialchars($row['ip_address']) ?></td>
-                        <td><?= htmlspecialchars($row['description']) ?></td>
-                        <td><?= htmlspecialchars($row['location']) ?></td>
-                        <td id="status-lan-<?= $row['id'] ?>">
-                          <span class="badge badge-smaller <?= $row['status'] === 'online' ? 'bg-success' : 'bg-danger' ?>">
-                            <?= ucfirst($row['status']) ?>
-                          </span>
-                          <span class="badge badge-smaller <?= $row['latency'] >= 100 ? 'bg-warning' : 'bg-info' ?>">
-                            <?= $row['latency'] ?> ms
-                          </span>
-                        </td>
-                        <td>
-                          <div class="btn-group">
-                            <button type="button"
-                                    class="btn btn-sm btn-primary view-details btn-xs"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#dataModal"
-                                    data-date="<?= htmlspecialchars($row['date']) ?>"
-                                    data-ip="<?= htmlspecialchars($row['ip_address']) ?>"
-                                    data-description="<?= htmlspecialchars($row['description']) ?>"
-                                    data-location="<?= htmlspecialchars($row['location']) ?>"
-                                    data-category="<?= htmlspecialchars($row['category']) ?>">
-                              View
-                            </button>
-                            <a href="report.php?report=<?= $row['id'] ?>"
-                               class="btn btn-sm btn-success btn-xs">Report</a>
-                          </div>
-                        </td>
+        // Loop through all categories
+        foreach ($categoryData as $categoryName => $rows): 
+          // Set a default color if not defined
+          $colorClass = isset($categoryColors[$categoryName]) ? $categoryColors[$categoryName] : 'dark';
+          
+          // Text color based on background (dark background gets white text)
+          $textClass = ($colorClass == 'warning' || $colorClass == 'info' || $colorClass == 'light') ? 'text-dark' : 'text-white';
+        ?>
+          <!-- Create a new row every 2 tables -->
+          <?php if ($counter % 2 == 0): ?>
+            <?php if ($counter > 0): ?></div><?php endif; ?>
+            <div class="row">
+          <?php endif; ?>
+          
+          <div class="col-md-6 mb-3">
+            <div class="card h-100">
+              <div class="card-header bg-<?= $colorClass ?> <?= $textClass ?> py-2">
+                <h5 class="mb-0 fs-6"><?= htmlspecialchars($categoryName) ?></h5>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table id="<?= strtolower(str_replace(' ', '-', $categoryName)) ?>-table" class="table table-bordered table-hover table-sm datatable mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Date</th>
+                        <th>IP</th>
+                        <th>Description</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                       </tr>
-                      <?php endforeach; ?>
-                    <?php endif; ?>
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      <?php if (!empty($rows)): ?>
+                        <?php foreach($rows as $row): ?>
+                        <tr class="clickable-row" data-href="report.php?report=<?= $row['id'] ?>">
+                          <td><?= date("M d, Y", strtotime($row['date'])) ?></td>
+                          <td><?= htmlspecialchars($row['ip_address']) ?></td>
+                          <td><?= htmlspecialchars($row['description']) ?></td>
+                          <td><?= htmlspecialchars($row['location']) ?></td>
+                          <td id="status-<?= strtolower(str_replace(' ', '-', $categoryName)) ?>-<?= $row['id'] ?>">
+                            <span class="badge badge-smaller <?= $row['status'] === 'online' ? 'bg-success' : 'bg-danger' ?>">
+                              <?= ucfirst($row['status']) ?>
+                            </span>
+                            <span class="badge badge-smaller <?= $row['latency'] >= 100 ? 'bg-warning' : 'bg-info' ?>">
+                              <?= $row['latency'] ?> ms
+                            </span>
+                            <span class="badge badge-smaller <?= $row['latency'] >= 100 ? 'bg-danger' : 'bg-success' ?>">
+                              <?= $row['latency'] >= 100 ? 'High Latency' : 'Low Latency' ?>
+                            </span>
+                          </td>
+                          <td>
+                            <div class="btn-group">
+                              <button type="button"
+                                      class="btn btn-sm btn-primary view-details btn-xs"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#dataModal"
+                                      data-date="<?= htmlspecialchars($row['date']) ?>"
+                                      data-ip="<?= htmlspecialchars($row['ip_address']) ?>"
+                                      data-description="<?= htmlspecialchars($row['description']) ?>"
+                                      data-location="<?= htmlspecialchars($row['location']) ?>"
+                                      data-category="<?= htmlspecialchars(isset($row['category']) ? $row['category'] : '') ?>">
+                                View
+                              </button>
+                              <a href="report.php?report=<?= $row['id'] ?>"
+                                class="btn btn-sm btn-success btn-xs">Report</a>
+                            </div>
+                          </td>
+                        </tr>
+                        <?php endforeach; ?>
+                      <?php endif; ?>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+          
+          <?php $counter++; ?>
+        <?php endforeach; ?>
         
-        <div class="col-md-6 mb-3">
-          <div class="card h-100">
-            <div class="card-header bg-warning text-dark py-2">
-              <h5 class="mb-0 fs-6">Server</h5>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table id="server-table" class="table table-bordered table-hover table-sm datatable mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>IP</th>
-                      <th>Description</th>
-                      <th>Location</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php if (!empty($categoryData['Server'])): ?>
-                      <?php foreach($categoryData['Server'] as $row): ?>
-                      <tr class="clickable-row" data-href="report.php?report=<?= $row['id'] ?>">
-                        <td><?= date("M d, Y", strtotime($row['date'])) ?></td>
-                        <td><?= htmlspecialchars($row['ip_address']) ?></td>
-                        <td><?= htmlspecialchars($row['description']) ?></td>
-                        <td><?= htmlspecialchars($row['location']) ?></td>
-                        <td id="status-server-<?= $row['id'] ?>">
-                          <span class="badge badge-smaller <?= $row['status'] === 'online' ? 'bg-success' : 'bg-danger' ?>">
-                            <?= ucfirst($row['status']) ?>
-                          </span>
-                          <span class="badge badge-smaller <?= $row['latency'] >= 100 ? 'bg-warning' : 'bg-info' ?>">
-                            <?= $row['latency'] ?> ms
-                          </span>
-                        </td>
-                        <td>
-                          <div class="btn-group">
-                            <button type="button"
-                                    class="btn btn-sm btn-primary view-details btn-xs"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#dataModal"
-                                    data-date="<?= htmlspecialchars($row['date']) ?>"
-                                    data-ip="<?= htmlspecialchars($row['ip_address']) ?>"
-                                    data-description="<?= htmlspecialchars($row['description']) ?>"
-                                    data-location="<?= htmlspecialchars($row['location']) ?>"
-                                    data-category="<?= htmlspecialchars($row['category']) ?>">
-                              View
-                            </button>
-                            <a href="report.php?report=<?= $row['id'] ?>"
-                               class="btn btn-sm btn-success btn-xs">Report</a>
-                          </div>
-                        </td>
-                      </tr>
-                      <?php endforeach; ?>
-                    <?php endif; ?>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+        <!-- Close the last row if there was an odd number of categories -->
+        <?php if ($counter % 2 != 0): ?>
           </div>
-        </div>
+        <?php endif; ?>
       </div>
 
       <!-- Data Details Modal -->
@@ -454,164 +294,9 @@ foreach ($standardCategories as $cat) {
             </div>
           </form>
         </div>
-      </div>
 
     </main>
   </div>
 </div>
 
-
-<!-- DataTables JavaScript -->
-<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize DataTables with smaller pagination
-  $('.datatable').each(function() {
-    $(this).DataTable({
-      responsive: true,
-      pageLength: 5,
-      lengthMenu: [[5, 10, 25], [5, 10, 25]],
-      order: [[0, 'desc']], // Sort by date desc
-      language: {
-        emptyTable: "No data",
-        zeroRecords: "No matches",
-        lengthMenu: "Show _MENU_",
-        info: "_START_-_END_ of _TOTAL_",
-        infoEmpty: "0 records",
-        infoFiltered: "(from _MAX_)",
-        search: "",
-        searchPlaceholder: "Search..."
-      },
-      dom: "<'row'<'col-sm-6'l><'col-sm-6'f>>" +
-           "<'row'<'col-sm-12'tr>>" +
-           "<'row'<'col-sm-5'i><'col-sm-7'p>>"
-    });
-  });
-
-  // clickable rows
-  document.querySelectorAll('.clickable-row').forEach(row => {
-    row.style.cursor = 'pointer';
-    row.addEventListener('click', e => {
-      if (e.target.closest('button') || e.target.closest('a')) return;
-      window.location = row.dataset.href;
-    });
-  });
-
-  // details modal
-  document.getElementById('dataModal')
-    .addEventListener('show.bs.modal', e => {
-      const btn = e.relatedTarget;
-      ['date','ip','description','location','category']
-        .forEach(f => document.getElementById(`modal-${f}`)
-                         .textContent = btn.dataset[f]);
-    });
-
-  // Set auto-refresh interval (15 minutes)
-  const intervalMs = 900000;
-  let intervalId = null;
-  let scheduleId = null;
-
-  function startAutoRefresh() {
-    // Clear any existing interval
-    if (intervalId) clearInterval(intervalId);
-    // Start new interval
-    intervalId = setInterval(refreshLatency, intervalMs);
-  }
-
-  // Start auto-refresh on load
-  startAutoRefresh();
-
-  // Manual refresh button - triggers refresh and resets auto timer
-  document.getElementById('refreshAll').addEventListener('click', () => {
-    refreshLatency();
-    startAutoRefresh();
-  });
-
-  // Schedule Daily Resume (skip Sundays) with SweetAlert2
-  document.getElementById('scheduleResume')
-    .addEventListener('click', () => {
-      const t = document.getElementById('resumeTime').value;
-      if (!t) {
-        return Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Please select a time first.'
-        });
-      }
-      const [h,m,s] = t.split(':').map((v,i)=>Number(v)||(i===2?0:0));
-      if (scheduleId) clearTimeout(scheduleId);
-
-      (function scheduleNext(){
-        const now = new Date();
-        let resumeAt = new Date(
-          now.getFullYear(), now.getMonth(), now.getDate(),
-          h, m, s
-        );
-        // bump if past or Sunday (day 0)
-        while (resumeAt <= now || resumeAt.getDay() === 0) {
-          resumeAt.setDate(resumeAt.getDate() + 1);
-        }
-        scheduleId = setTimeout(() => {
-          showLoader();
-          refreshLatency();
-          startAutoRefresh();
-          scheduleNext();
-        }, resumeAt - now);
-      })();
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Scheduled',
-        text: `Ping will resume daily at ${t}, skipping Sundays.`,
-        timer: 3000,
-        showConfirmButton: false
-      });
-    });
-});
-
-// loader UI
-let loaderTimer, loaderStart;
-function showLoader() {
-  loaderStart = Date.now();
-  document.getElementById('loader').classList.remove('d-none');
-  loaderTimer = setInterval(() => {
-    const s = Math.floor((Date.now() - loaderStart)/1000);
-    document.getElementById('loader-text').textContent = `Loading... ${s}s`;
-  }, 500);
-}
-function hideLoader() {
-  clearInterval(loaderTimer);
-  document.getElementById('loader-text').textContent = 'Loading... 0s';
-  document.getElementById('loader').classList.add('d-none');
-}
-
-// ping + update all tables
-function refreshLatency() {
-  showLoader();
-  fetch('/backend/get_latency.php')
-    .then(res => res.ok ? res.json() : Promise.reject())
-    .then(data => {
-      data.forEach(r => {
-        // Update in category-specific tables
-        const categories = ['internet', 'cctv', 'lan', 'server'];
-        const cat = r.category ? r.category.toLowerCase() : '';
-        
-        if (categories.includes(cat)) {
-          const st = document.getElementById(`status-${cat}-${r.id}`);
-          
-          if (st) st.innerHTML = `
-            <span class="badge badge-smaller ${r.status === 'online' ? 'bg-success' : 'bg-danger'}">
-              ${r.status === 'online' ? 'Online' : 'Offline'}
-            </span>
-            <span class="badge badge-smaller ${r.latency >= 100 ? 'bg-warning' : 'bg-info'}">
-              ${r.latency} ms
-            </span>`;
-        }
-      });
-    })
-    .catch(console.error)
-    .finally(hideLoader);
-}
-</script>
+<script src="../js/monitoring.js"> </script>

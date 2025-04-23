@@ -1,9 +1,5 @@
+
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
-        <button type="button" id="sidebarCollapse" class="btn">
-            <i class="fas fa-bars"></i>
-        </button>
-        
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item dropdown">

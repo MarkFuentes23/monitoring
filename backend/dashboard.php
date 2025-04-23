@@ -1,4 +1,5 @@
-<?php 
+<?php
+//dashboard.php = backend
 require_once '../config/db.php';
 
 // Function to get summary data
@@ -38,7 +39,11 @@ function getSummaryData($conn) {
 // Function to get category statistics
 function getCategoryStats($conn) {
     try {
-        $categories = ['LAN', 'CCTV', 'Server', 'Internet'];
+        // Get all categories from the database
+        $categoryQuery = "SELECT DISTINCT category FROM add_ip WHERE category IS NOT NULL AND category != ''";
+        $categoryStmt = $conn->query($categoryQuery);
+        $categories = $categoryStmt->fetchAll(PDO::FETCH_COLUMN);
+        
         $categoryStats = [];
         
         foreach($categories as $category) {
@@ -73,10 +78,16 @@ function getCategoryStats($conn) {
 // Function to get offline devices
 function getOfflineDevices($conn) {
     try {
-        $query = "SELECT ip_address, location, category, status 
-                  FROM add_ip 
-                  WHERE status = 'offline'
-                  ORDER BY category, ip_address";
+        $query = "
+            SELECT ip_address,
+                   location,
+                   category,
+                   description,
+                   status
+            FROM add_ip
+            WHERE status = 'offline'
+            ORDER BY category ASC, location ASC
+        ";
         
         $stmt = $conn->query($query);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -85,6 +96,7 @@ function getOfflineDevices($conn) {
         return [];
     }
 }
+
 
 // Function to get high latency devices
 function getHighLatencyDevices($conn, $threshold = 100) {
@@ -107,6 +119,17 @@ function getHighLatencyDevices($conn, $threshold = 100) {
 // Function to update latency data - similar to your get_latency.php
 function updateLatencyData($conn) {
     try {
+        // Get current status of all IPs for comparison later
+        $currentStatusQuery = "SELECT id, ip_address, status FROM add_ip";
+        $currentStatusStmt = $conn->query($currentStatusQuery);
+        $currentStatus = [];
+        while ($row = $currentStatusStmt->fetch(PDO::FETCH_ASSOC)) {
+            $currentStatus[$row['id']] = [
+                'ip_address' => $row['ip_address'],
+                'status' => $row['status']
+            ];
+        }
+
         // Get all IPs
         $rows = $conn
             ->query("SELECT * FROM add_ip ORDER BY date DESC")
@@ -186,6 +209,8 @@ function updateLatencyData($conn) {
 
         // Process results
         $response = [];
+        $newlyOfflineDevices = [];
+        
         foreach ($results as $result) {
             $row = $result['row'];
             $output = $result['output'];
@@ -210,6 +235,15 @@ function updateLatencyData($conn) {
 
             $fmt = number_format($avg, 2);
 
+            // Check if device just went offline
+            if ($status == 'offline' && isset($currentStatus[$row['id']]) && $currentStatus[$row['id']]['status'] == 'online') {
+                $newlyOfflineDevices[] = [
+                    'ip_address' => $row['ip_address'],
+                    'location' => $row['location'] ?? 'Unknown',
+                    'category' => $row['category'] ?? 'Unknown'
+                ];
+            }
+
             // Update database
             $u = $conn->prepare("UPDATE add_ip SET latency = ?, status = ? WHERE id = ?");
             $u->execute([$fmt, $status, $row['id']]);
@@ -223,10 +257,16 @@ function updateLatencyData($conn) {
             $response[] = $row;
         }
 
-        return $response;
+        return [
+            'devices' => $response,
+            'newlyOfflineDevices' => $newlyOfflineDevices
+        ];
     } catch(Exception $e) {
         error_log("Error in updateLatencyData: " . $e->getMessage());
-        return [];
+        return [
+            'devices' => [],
+            'newlyOfflineDevices' => []
+        ];
     }
 }
 
@@ -235,8 +275,10 @@ requireLogin();
 
 // Check if this is an AJAX refresh request
 if(isset($_GET['refresh']) && $_GET['refresh'] === 'true') {
+    $updateResult = ['newlyOfflineDevices' => []];
+    
     if(isset($_GET['force']) && $_GET['force'] === 'true') {
-        updateLatencyData($conn);
+        $updateResult = updateLatencyData($conn);
     }
     
     $summaryData = getSummaryData($conn);
@@ -250,7 +292,8 @@ if(isset($_GET['refresh']) && $_GET['refresh'] === 'true') {
         'categories' => $categoryStats,
         'offlineDevices' => $offlineDevices,
         'highLatencyDevices' => $highLatencyDevices,
-        'timestamp' => date('Y-m-d H:i:s')
+        'timestamp' => date('Y-m-d H:i:s'),
+        'newlyOfflineDevices' => $updateResult['newlyOfflineDevices']
     ]);
     exit;
 }
@@ -270,5 +313,4 @@ $summaryData = getSummaryData($conn);
 $categoryStats = getCategoryStats($conn);
 $offlineDevices = getOfflineDevices($conn);
 $highLatencyDevices = getHighLatencyDevices($conn);
-
 ?>
