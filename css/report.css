@@ -1,0 +1,230 @@
+
+  /* Table header */
+  #monthlyAverageTable thead th {
+    font-size: 0.70rem;  /* maliit na header */
+  }
+
+  /* Table body */
+  #monthlyAverageTable tbody td {
+    font-size: 0.70rem;  /* mas maliit pa ang body text */
+  }
+
+  /* Search box at length dropdown label at control */
+  #monthlyAverageTable_wrapper .dataTables_filter label,
+  #monthlyAverageTable_wrapper .dataTables_length label {
+    font-size: 0.7rem;
+  }
+  #monthlyAverageTable_wrapper .dataTables_filter input,
+  #monthlyAverageTable_wrapper .dataTables_length select {
+    font-size: 0.7rem;
+    padding: 0.25em 0.4em;  /* bawasan ang padding para mas compact */
+    height: auto;
+  }
+
+  /* Info text (“Showing X to Y of Z entries”) */
+  #monthlyAverageTable_wrapper .dataTables_info {
+    font-size: 0.7rem;
+  }
+
+  /* Pagination buttons */
+  #monthlyAverageTable_wrapper .dataTables_paginate .paginate_button {
+    font-size: 0.7rem;
+  }
+  /* Active/current page button */
+  #monthlyAverageTable_wrapper .dataTables_paginate .paginate_button.current {
+    background-color: #0d6efd;  /* Bootstrap primary bg */
+    color: white !important;
+    border: none;
+  }
+  .badge-sm {
+    font-size: 0.75rem;     
+    padding: 0.25em 0.4em; 
+}
+#monthlyAverageTable .badge {
+        font-size: 0.60rem;
+        padding: 0.25em 0.4em;
+    }
+
+     .high-latency { background-color: #f8d7da; } 
+    .low-latency  { background-color: #d4edda; }   
+    .bg-success  { background-color: #d4edda; } 
+
+    #refreshBtn{
+        background-color: skyblue;
+    }
+/* Enhanced Device Overview Styling */
+.table-hover tr:hover {
+  background-color: rgba(13, 110, 253, 0.04);
+}
+
+.metric-card {
+  position: relative;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.metric-card.good {
+  background-color: rgba(25, 135, 84, 0.08);
+  border-left: 4px solid var(--success-color);
+}
+
+.metric-card.warning {
+  background-color: rgba(255, 193, 7, 0.08);
+  border-left: 4px solid var(--warning-color);
+}
+
+.metric-card.danger {
+  background-color: rgba(220, 53, 69, 0.08);
+  border-left: 4px solid var(--danger-color);
+}
+
+.metric-card.info {
+  background-color: rgba(13, 110, 253, 0.08);
+  border-left: 4px solid var(--primary-color);
+}
+
+.metric-icon {
+  margin-bottom: 0.75rem;
+  font-size: 1.5rem;
+}
+
+.metric-card.good .metric-icon {
+  color: var(--success-color);
+}
+
+.metric-card.warning .metric-icon {
+  color: var(--warning-color);
+}
+
+.metric-card.danger .metric-icon {
+  color: var(--danger-color);
+}
+
+.metric-card.info .metric-icon {
+  color: var(--primary-color);
+}
+
+.metric-card h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.metric-card p {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge {
+  font-weight: 500;
+  padding: 0.4em 0.65em;
+}
+
+.badge.rounded-pill {
+  padding-left: 0.75em;
+  padding-right: 0.75em;
+}
+
+.table-secondary {
+  background-color: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
+}
+
+.fw-medium {
+  font-weight: 500;
+}
+
+ /* Existing table styles */
+ #offlineTable thead th,
+ #latencyTable thead th,
+ #monthlyStatsTable thead th {
+   font-size: 0.70rem;
+ }
+
+ #offlineTable tbody td,
+ #latencyTable tbody td,
+ #monthlyStatsTable tbody td {
+   font-size: 0.65rem;
+ }
+
+ #offlineTable_wrapper .dataTables_filter label,
+ #offlineTable_wrapper .dataTables_length label,
+ #latencyTable_wrapper .dataTables_filter label,
+ #latencyTable_wrapper .dataTables_length label,
+ #monthlyStatsTable_wrapper .dataTables_filter label,
+ #monthlyStatsTable_wrapper .dataTables_length label {
+   font-size: 0.7rem;
+ }
+ 
+ #offlineTable_wrapper .dataTables_filter input,
+ #offlineTable_wrapper .dataTables_length select,
+ #monthlyStatsTable_wrapper .dataTables_filter input,
+ #monthlyStatsTable_wrapper .dataTables_length select {
+   font-size: 0.7rem;
+   padding: 0.25em 0.4em;
+   height: auto;
+ }
+
+ #offlineTable_wrapper .dataTables_info,
+ #monthlyStatsTable_wrapper .dataTables_info {
+   font-size: 0.7rem;
+ }
+
+ #offlineTable_wrapper .dataTables_paginate .paginate_button,
+ #monthlyStatsTable_wrapper .dataTables_paginate .paginate_button {
+   font-size: 0.7rem;
+ }
+ 
+ #offlineTable_wrapper .dataTables_paginate .paginate_button.current,
+ #monthlyStatsTable_wrapper .dataTables_paginate .paginate_button.current {
+   background-color: #0d6efd;
+   color: white !important;
+   border: none;
+ }
+ 
+ .badge-sm {
+   font-size: 0.75rem;     
+   padding: 0.25em 0.4em; 
+ }
+ 
+ #latencyTable .badge {
+   font-size: 0.60rem;
+   padding: 0.25em 0.4em;
+ }
+
+ .high-latency { background-color: #f8d7da; } 
+ .low-latency { background-color: #d4edda; }   
+ .bg-success { background-color: #d4edda; } 
+
+ #refreshBtn{
+   background-color: skyblue;
+ }
+ 
+ /* Monthly stats specific styles */
+ .uptime-excellent { background-color: #d4edda; }
+ .uptime-good { background-color: #fff3cd; }
+ .uptime-warning { background-color: #ffe5d0; }
+ .uptime-critical { background-color: #f8d7da; }
+ 
+ .dt-buttons {
+   margin-bottom: 10px;
+ }
+ 
+ .dt-button {
+   font-size: 0.7rem !important;
+   padding: 0.25em 0.5em !important;
+ }

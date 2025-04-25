@@ -1,262 +1,339 @@
 <?php
-ob_start();
-require_once '../config/db.php';
+// Include TCPDF library
 require_once '../vendor/autoload.php';
-
-requireLogin();
+require_once('../config/db.php');
 
 // Validate report ID
 if (!isset($_GET['report']) || !is_numeric($_GET['report'])) {
-    header('Location: dashboard.php?error=invalid_report');
+    $_SESSION['error'] = "Invalid report ID.";
+    header("Location: monitoring.php");
     exit;
 }
-
 $report_id = (int)$_GET['report'];
 
-// Fetch device information
+// Month filter
+$selectedMonth = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('m');
+$selectedYear = date('Y');
+$monthName = date('F', mktime(0,0,0,$selectedMonth,1));
+
+// Fetch device info
 $stmt = $conn->prepare("SELECT * FROM add_ip WHERE id = ?");
 $stmt->execute([$report_id]);
-$device = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$device) {
-    header('Location: dashboard.php?error=device_not_found');
+$device_data = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$device_data) {
+    $_SESSION['error'] = "Device not found!";
+    header("Location: monitoring.php");
     exit;
 }
 
-// Calculate today's date
-$today = date('Y-m-d');
+// Fetch monthly logs
+$stmt = $conn->prepare("
+    SELECT 
+      p.created_at, 
+      p.latency, 
+      p.status,
+      a.ip_address,
+      a.location,
+      a.category,
+      a.description
+    FROM ping_logs p
+    JOIN add_ip a ON p.ip_id = a.id
+    WHERE p.ip_id = ?
+      AND YEAR(p.created_at) = ?
+      AND MONTH(p.created_at) = ?
+      AND HOUR(p.created_at) >= 8
+      AND HOUR(p.created_at) < 17
+      AND WEEKDAY(p.created_at) < 5
+    ORDER BY p.created_at
+");
+$stmt->execute([$report_id, $selectedYear, $selectedMonth]);
+$monthly_logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get hourly stats for today
-$stmt = $conn->prepare(
-    "SELECT HOUR(created_at) AS log_hour, 
-            AVG(latency) AS avg_latency,
-            MIN(latency) AS min_latency, 
-            MAX(latency) AS max_latency,
-            SUM(CASE WHEN status='offline' THEN 1 ELSE 0 END) AS offline_count,
-            COUNT(*) AS total_checks
-     FROM ping_logs
-     WHERE ip_id = ? AND DATE(created_at) = ?
-     GROUP BY HOUR(created_at)
-     ORDER BY log_hour ASC"
-);
-$stmt->execute([$report_id, $today]);
-$hourlyStats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Get daily statistics for selected month
+$stmt = $conn->prepare("
+    SELECT 
+        DATE(created_at) AS log_date,
+        AVG(latency) AS avg_latency,
+        MIN(latency) AS min_latency,
+        MAX(latency) AS max_latency,
+        SUM(CASE WHEN status = 'offline' THEN 1 ELSE 0 END) AS offline_count,
+        SUM(CASE WHEN status = 'online' THEN 1 ELSE 0 END) AS online_count,
+        COUNT(*) AS total_checks
+    FROM ping_logs
+    WHERE ip_id = ? 
+      AND YEAR(created_at) = ?
+      AND MONTH(created_at) = ?
+      AND HOUR(created_at) >= 8
+      AND HOUR(created_at) < 17
+      AND WEEKDAY(created_at) < 5
+    GROUP BY DATE(created_at)
+    ORDER BY log_date
+");
+$stmt->execute([$report_id, $selectedYear, $selectedMonth]);
+$daily_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculate overall daily metrics
-$stmt = $conn->prepare(
-    "SELECT COUNT(*) AS total_checks,
-            SUM(CASE WHEN status='offline' THEN 1 ELSE 0 END) AS offline_count,
-            AVG(latency) AS avg_latency,
-            MIN(latency) AS min_latency,
-            MAX(latency) AS max_latency
-     FROM ping_logs
-     WHERE ip_id = ? AND DATE(created_at) = ?"
-);
-$stmt->execute([$report_id, $today]);
-$dailyMetrics = $stmt->fetch(PDO::FETCH_ASSOC);
+// Calculate monthly summary stats
+$total_checks = 0;
+$total_offline = 0;
+$total_online = 0;
+$sum_latency = 0;
+$max_latency = 0;
+$min_latency = PHP_INT_MAX;
 
-$uptime = $dailyMetrics['total_checks'] > 0 
-        ? round(($dailyMetrics['total_checks'] - $dailyMetrics['offline_count']) / $dailyMetrics['total_checks'] * 100, 2)
-        : 0;
-
-// Initialize TCPDF
-$pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-$pdf->SetCreator('IT Network Monitoring');
-$pdf->SetAuthor('IT Department');
-$pdf->SetTitle('Daily Network Device Status Report');
-$pdf->setPrintHeader(false);
-$pdf->setPrintFooter(false);
-$pdf->SetMargins(10, 10, 10);
-$pdf->SetAutoPageBreak(TRUE, 10);
-$pdf->AddPage();
-
-// Define colors
-$colorOnline = '#4CAF50';
-$colorOffline = '#F44336';
-$colorWarning = '#FF9800';
-
-// Report Header
-$html = '
-<style>
-    h1 {color: #2c3e50; font-size: 20pt; text-align: center; margin-bottom: 5px;}
-    h2 {color: #34495e; font-size: 14pt; margin-top: 5px; margin-bottom: 5px;}
-    .subtitle {color: #7f8c8d; font-size: 10pt; text-align: center; margin-top: 0;}
-    .section {background-color: #f5f5f5; padding: 5px; margin-top: 10px; border-left: 5px solid #3498db;}
-    .status-good {color: #4CAF50; font-weight: bold;}
-    .status-warning {color: #FF9800; font-weight: bold;}
-    .status-critical {color: #F44336; font-weight: bold;}
-    table {width: 100%; border-collapse: collapse; margin-top: 5px; margin-bottom: 15px;}
-    table.stats th {background-color: #3498db; color: white; font-weight: bold; text-align: center;}
-    table.stats td, table.stats th {border: 1px solid #bdc3c7; padding: 5px; text-align: center;}
-    table.info td, table.info th {border: 1px solid #bdc3c7; padding: 5px;}
-    table.info th {width: 30%; background-color: #ecf0f1; text-align: right;}
-    .metrics-box {width: 94%; margin: 10px auto; text-align: center; border: 1px solid #ddd; padding: 10px;}
-    .metrics-title {font-weight: bold; margin-bottom: 5px;}
-    .metrics-value {font-size: 24pt; margin: 10px 0;}
-    .clear {clear: both;}
-</style>
-
-<h1>Daily Network Device Status Report</h1>
-<p class="subtitle">Generated on ' . date('F j, Y') . ' at ' . date('H:i') . '</p>
-
-<div class="section">
-    <h2>Device Information</h2>
-</div>
-
-<table class="info">
-    <tr>
-        <th>IP Address</th>
-        <td><strong>' . htmlspecialchars($device['ip_address']) . '</strong></td>
-    </tr>
-    <tr>
-        <th>Description</th>
-        <td>' . htmlspecialchars($device['description']) . '</td>
-    </tr>
-    <tr>
-        <th>Location</th>
-        <td>' . htmlspecialchars($device['location']) . '</td>
-    </tr>
-    <tr>
-        <th>Current Status</th>
-        <td class="' . ($device['status'] == 'online' ? 'status-good' : 'status-critical') . '">' . 
-            strtoupper($device['status']) . '</td>
-    </tr>
-    <tr>
-        <th>Current Latency</th>
-        <td>' . number_format($device['latency'], 2) . ' ms</td>
-    </tr>
-</table>
-
-<div class="section">
-    <h2>Daily Performance Summary</h2>
-</div>';
-
-// Daily metrics box
-$html .= '
-<div class="metrics-box">
-    <div class="metrics-title">TODAY\'S UPTIME</div>
-    <div class="metrics-value ' . ($uptime >= 99.9 ? 'status-good' : ($uptime >= 95 ? 'status-warning' : 'status-critical')) . '">
-        ' . $uptime . '%
-    </div>
-    <div>Average Latency: ' . round($dailyMetrics['avg_latency'], 2) . ' ms</div>
-    <div>Min Latency: ' . round($dailyMetrics['min_latency'], 2) . ' ms | Max Latency: ' . round($dailyMetrics['max_latency'], 2) . ' ms</div>
-    <div>Total Checks: ' . $dailyMetrics['total_checks'] . ' | Failed Checks: ' . $dailyMetrics['offline_count'] . '</div>
-</div>';
-
-// Hourly stats table
-$html .= '
-<div class="section">
-    <h2>Hourly Performance Statistics</h2>
-</div>
-
-<table class="stats">
-    <tr>
-        <th>Hour</th>
-        <th>Avg Latency</th>
-        <th>Min</th>
-        <th>Max</th>
-        <th>Offline</th>
-        <th>Checks</th>
-        <th>Uptime %</th>
-    </tr>';
-
-foreach ($hourlyStats as $hour) {
-    $hourUptime = $hour['total_checks'] > 0 
-            ? round(($hour['total_checks'] - $hour['offline_count']) / $hour['total_checks'] * 100, 2)
-            : 0;
-            
-    $uptimeClass = $hourUptime >= 99.9 ? 'status-good' : ($hourUptime >= 95 ? 'status-warning' : 'status-critical');
-    
-    $hourFormatted = sprintf("%02d:00 - %02d:59", $hour['log_hour'], $hour['log_hour']);
-    
-    $html .= '
-    <tr>
-        <td>' . $hourFormatted . '</td>
-        <td>' . number_format($hour['avg_latency'], 2) . ' ms</td>
-        <td>' . number_format($hour['min_latency'], 2) . ' ms</td>
-        <td>' . number_format($hour['max_latency'], 2) . ' ms</td>
-        <td>' . $hour['offline_count'] . '</td>
-        <td>' . $hour['total_checks'] . '</td>
-        <td class="' . $uptimeClass . '">' . $hourUptime . '%</td>
-    </tr>';
+foreach ($daily_stats as $day) {
+    $total_checks += $day['total_checks'];
+    $total_offline += $day['offline_count'];
+    $total_online += $day['online_count'];
+    $sum_latency += ($day['avg_latency'] * $day['total_checks']);
+    $max_latency = max($max_latency, $day['max_latency']);
+    $min_latency = min($min_latency, $day['min_latency']);
 }
 
-$html .= '</table>';
+$avg_latency = $total_checks > 0 ? $sum_latency / $total_checks : 0;
+$online_percentage = $total_checks > 0 ? ($total_online / $total_checks) * 100 : 0;
+$offline_percentage = $total_checks > 0 ? ($total_offline / $total_checks) * 100 : 0;
+$uptime_percentage = $total_checks > 0 ? (($total_checks - $total_offline) / $total_checks) * 100 : 0;
 
-// Status summary
-$html .= '
-<div class="section">
-    <h2>Today\'s Status Summary</h2>
-</div>';
-
-if ($uptime < 95) {
-    $html .= '
-    <div style="border-left: 5px solid #F44336; padding: 10px; background-color: #FFEBEE;">
-        <strong>Critical Issue:</strong> Device experiencing significant downtime today. Recommend immediate investigation.
-    </div>';
-} elseif ($uptime < 99) {
-    $html .= '
-    <div style="border-left: 5px solid #FF9800; padding: 10px; background-color: #FFF3E0;">
-        <strong>Warning:</strong> Device experiencing intermittent connectivity issues today. Monitor closely.
-    </div>';
-} else {
-    $html .= '
-    <div style="border-left: 5px solid #4CAF50; padding: 10px; background-color: #E8F5E9;">
-        <strong>Good Status:</strong> Device operating normally today.
-    </div>';
-}
-
-// Add incidents section if any outages today
-if ($dailyMetrics['offline_count'] > 0) {
-    $html .= '
-    <div class="section">
-        <h2>Today\'s Incidents</h2>
-    </div>';
+// Create new PDF document
+class MYPDF extends TCPDF {
+    public function Header() {
+        $this->SetFont('helvetica', 'B', 12);
+        $this->Cell(0, 10, 'Network Device Monthly Performance Report', 0, 1, 'C');
+        $this->SetFont('helvetica', '', 9);
+        $this->Cell(0, 5, 'Generated: ' . date('F j, Y, g:i a'), 0, 1, 'R');
+        $this->Line(10, $this->GetY(), $this->getPageWidth() - 10, $this->GetY());
+        $this->Ln(5);
+    }
     
-    // Get significant outage periods
-    $stmt = $conn->prepare(
-        "SELECT 
-            created_at AS outage_time,
-            latency
-         FROM ping_logs
-         WHERE ip_id = ? AND DATE(created_at) = ? AND status = 'offline'
-         ORDER BY created_at ASC"
-    );
-    $stmt->execute([$report_id, $today]);
-    $outages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    if (count($outages) > 0) {
-        $html .= '<table class="stats">
-            <tr>
-                <th>Time</th>
-                <th>Last Recorded Latency</th>
-            </tr>';
-            
-        foreach ($outages as $outage) {
-            $html .= '
-            <tr>
-                <td>' . date('H:i:s', strtotime($outage['outage_time'])) . '</td>
-                <td>' . number_format($outage['latency'], 2) . ' ms</td>
-            </tr>';
-        }
-        
-        $html .= '</table>';
+    public function Footer() {
+        $this->SetY(-15);
+        $this->SetFont('helvetica', 'I', 8);
+        $this->Cell(0, 10, 'Page ' . $this->getAliasNumPage().'/'.$this->getAliasNbPages(), 0, false, 'C');
     }
 }
 
-// Add footer
-$html .= '
-<div style="position: absolute; bottom: 10mm; width: 100%; text-align: center; font-size: 8pt; color: #95a5a6;">
-    Generated by IT Network Monitoring System • Internal Use Only<br>
-    Page {PAGENO} of {nb}
-</div>';
+// Initialize PDF
+$pdf = new MYPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+$pdf->SetCreator('Network Monitoring System');
+$pdf->SetAuthor('System Administrator');
+$pdf->SetTitle('Monthly Report - ' . $device_data['description']);
+$pdf->SetSubject('Network Device Performance Report');
 
-// Output HTML to PDF
-$pdf->writeHTML($html, true, false, true, false, '');
+// Set default header data
+$pdf->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
 
-// Set page numbers
-$pdf->setFooterFont(Array('helvetica', '', 8));
-$pdf->setFooterMargin(5);
+// Set margins
+$pdf->SetMargins(10, 30, 10);
+$pdf->SetHeaderMargin(10);
+$pdf->SetFooterMargin(10);
 
-// Output PDF
-$pdf->Output('daily_network_report_' . $report_id . '.pdf', 'I');
-?>
+// Set auto page breaks
+$pdf->SetAutoPageBreak(TRUE, 15);
+
+// Add a page
+$pdf->AddPage();
+
+// Device information section
+$pdf->SetFont('helvetica', 'B', 14);
+$pdf->Cell(0, 10, $device_data['description'] . ' - ' . $monthName . ' ' . $selectedYear . ' Report', 0, 1);
+
+$pdf->SetFont('helvetica', 'B', 11);
+$pdf->Cell(0, 7, 'Device Information', 0, 1, 'L');
+
+$pdf->SetFont('helvetica', '', 10);
+$pdf->SetFillColor(240, 240, 240);
+
+// Create device info table
+$device_info = array(
+    array('IP Address:', $device_data['ip_address']),
+    array('Description:', $device_data['description']),
+    array('Location:', $device_data['location']),
+    array('Category:', $device_data['category']),
+    array('Current Status:', $device_data['status'] === 'online' ? 'Online' : 'Offline'),
+    array('Current Latency:', $device_data['latency'] . ' ms')
+);
+
+foreach($device_info as $i => $row) {
+    $fill = ($i % 2 == 0) ? true : false;
+    $pdf->Cell(40, 7, $row[0], 1, 0, 'L', $fill);
+    $pdf->Cell(140, 7, $row[1], 1, 1, 'L', $fill);
+}
+
+$pdf->Ln(5);
+
+// Monthly Performance Summary
+$pdf->SetFont('helvetica', 'B', 11);
+$pdf->Cell(0, 7, 'Monthly Performance Summary', 0, 1, 'L');
+
+$pdf->SetFont('helvetica', '', 10);
+
+// Create summary table with online/offline totals and percentages
+$summary_data = array(
+    array('Total Checks:', $total_checks),
+    array('Online Count:', $total_online),
+    array('Offline Count:', $total_offline),
+    array('Online Percentage:', number_format($online_percentage, 2) . '%'),
+    array('Offline Percentage:', number_format($offline_percentage, 2) . '%'),
+    array('Uptime Percentage:', number_format($uptime_percentage, 2) . '%'),
+    array('Average Latency:', number_format($avg_latency, 2) . ' ms'),
+    array('Minimum Latency:', number_format($min_latency, 2) . ' ms'),
+    array('Maximum Latency:', number_format($max_latency, 2) . ' ms')
+);
+
+// Create summary table
+foreach($summary_data as $i => $row) {
+    $fill = ($i % 2 == 0) ? true : false;
+    $pdf->Cell(60, 7, $row[0], 1, 0, 'L', $fill);
+    $pdf->Cell(120, 7, $row[1], 1, 1, 'L', $fill);
+}
+
+$pdf->Ln(5);
+
+// Status Rating
+$statusRating = '';
+if ($uptime_percentage == 100) {
+    $statusRating = 'Excellent';
+} elseif ($uptime_percentage >= 99.5) {
+    $statusRating = 'Very Good';
+} elseif ($uptime_percentage >= 95) {
+    $statusRating = 'Average';
+} else {
+    $statusRating = 'Poor';
+}
+
+$pdf->SetFont('helvetica', 'B', 11);
+$pdf->Cell(40, 10, 'Overall Status Rating:', 0, 0);
+$pdf->SetFont('helvetica', 'B', 11);
+
+// Set color based on rating
+switch ($statusRating) {
+    case 'Excellent':
+    case 'Very Good':
+        $pdf->SetTextColor(0, 128, 0); // Green
+        break;
+    case 'Average':
+        $pdf->SetTextColor(255, 165, 0); // Orange
+        break;
+    case 'Poor':
+        $pdf->SetTextColor(255, 0, 0); // Red
+        break;
+}
+
+$pdf->Cell(0, 10, $statusRating, 0, 1);
+$pdf->SetTextColor(0, 0, 0); // Reset to black
+
+$pdf->Ln(5);
+
+// Daily Performance Table
+$pdf->SetFont('helvetica', 'B', 11);
+$pdf->Cell(0, 7, 'Daily Performance (Working Hours: Mon-Fri, 8AM-5PM)', 0, 1, 'L');
+$pdf->SetFont('helvetica', 'B', 9);
+
+// Table header
+$pdf->SetFillColor(220, 220, 220);
+$pdf->Cell(25, 7, 'Date', 1, 0, 'C', true);
+$pdf->Cell(25, 7, 'Total Checks', 1, 0, 'C', true);
+$pdf->Cell(25, 7, 'Online', 1, 0, 'C', true);
+$pdf->Cell(25, 7, 'Offline', 1, 0, 'C', true);
+$pdf->Cell(30, 7, 'Online %', 1, 0, 'C', true);
+$pdf->Cell(30, 7, 'Avg Latency (ms)', 1, 0, 'C', true);
+$pdf->Cell(30, 7, 'Status', 1, 1, 'C', true);
+
+$pdf->SetFont('helvetica', '', 9);
+$pdf->SetFillColor(245, 245, 245);
+
+// Table data
+if (!empty($daily_stats)) {
+    foreach ($daily_stats as $i => $day) {
+        $fill = ($i % 2 == 0) ? true : false;
+        $date = date("M j, Y", strtotime($day['log_date']));
+        $online_pct = $day['total_checks'] > 0 ? ($day['online_count'] / $day['total_checks']) * 100 : 0;
+        
+        // Determine status
+        $status = '';
+        if ($online_pct == 100) {
+            $status = 'Excellent';
+        } elseif ($online_pct >= 99.5) {
+            $status = 'Very Good';
+        } elseif ($online_pct >= 95) {
+            $status = 'Average';
+        } else {
+            $status = 'Poor';
+        }
+        
+        $pdf->Cell(25, 6, $date, 1, 0, 'C', $fill);
+        $pdf->Cell(25, 6, $day['total_checks'], 1, 0, 'C', $fill);
+        $pdf->Cell(25, 6, $day['online_count'], 1, 0, 'C', $fill);
+        $pdf->Cell(25, 6, $day['offline_count'], 1, 0, 'C', $fill);
+        $pdf->Cell(30, 6, number_format($online_pct, 2) . '%', 1, 0, 'C', $fill);
+        $pdf->Cell(30, 6, number_format($day['avg_latency'], 2), 1, 0, 'C', $fill);
+        $pdf->Cell(30, 6, $status, 1, 1, 'C', $fill);
+    }
+} else {
+    $pdf->Cell(0, 10, 'No data available for this month', 1, 1, 'C');
+}
+
+$pdf->Ln(5);
+
+// Add a page for detailed logs
+$pdf->AddPage();
+$pdf->SetFont('helvetica', 'B', 11);
+$pdf->Cell(0, 7, 'Detailed Ping Logs - ' . $monthName . ' ' . $selectedYear, 0, 1, 'L');
+$pdf->SetFont('helvetica', '', 9);
+$pdf->MultiCell(0, 5, 'Records filtered for working hours only (Monday-Friday, 8AM-5PM)', 0, 'L');
+$pdf->Ln(2);
+
+// Table header for detailed logs
+$pdf->SetFont('helvetica', 'B', 8);
+$pdf->SetFillColor(220, 220, 220);
+$pdf->Cell(30, 7, 'Date', 1, 0, 'C', true);
+$pdf->Cell(20, 7, 'Time', 1, 0, 'C', true);
+$pdf->Cell(20, 7, 'Status', 1, 0, 'C', true);
+$pdf->Cell(20, 7, 'Latency', 1, 0, 'C', true);
+$pdf->Cell(90, 7, 'Description', 1, 1, 'C', true);
+
+$pdf->SetFont('helvetica', '', 8);
+$pdf->SetFillColor(245, 245, 245);
+
+// Display detailed logs
+if (!empty($monthly_logs)) {
+    foreach ($monthly_logs as $i => $log) {
+        // If we're approaching the bottom of the page, add a new page
+        if ($pdf->GetY() > 250) {
+            $pdf->AddPage();
+            
+            // Reprint the header
+            $pdf->SetFont('helvetica', 'B', 11);
+            $pdf->Cell(0, 7, 'Detailed Ping Logs (Continued)', 0, 1, 'L');
+            $pdf->Ln(2);
+            
+            // Table header for detailed logs
+            $pdf->SetFont('helvetica', 'B', 8);
+            $pdf->SetFillColor(220, 220, 220);
+            $pdf->Cell(30, 7, 'Date', 1, 0, 'C', true);
+            $pdf->Cell(20, 7, 'Time', 1, 0, 'C', true);
+            $pdf->Cell(20, 7, 'Status', 1, 0, 'C', true);
+            $pdf->Cell(20, 7, 'Latency', 1, 0, 'C', true);
+            $pdf->Cell(90, 7, 'Description', 1, 1, 'C', true);
+            
+            $pdf->SetFont('helvetica', '', 8);
+            $pdf->SetFillColor(245, 245, 245);
+        }
+        
+        $fill = ($i % 2 == 0) ? true : false;
+        $date = date("M j, Y", strtotime($log['created_at']));
+        $time = date("h:i A", strtotime($log['created_at']));
+        
+        $pdf->Cell(30, 6, $date, 1, 0, 'C', $fill);
+        $pdf->Cell(20, 6, $time, 1, 0, 'C', $fill);
+        $pdf->Cell(20, 6, ucfirst($log['status']), 1, 0, 'C', $fill);
+        $pdf->Cell(20, 6, $log['latency'] . ' ms', 1, 0, 'C', $fill);
+        $pdf->Cell(90, 6, $log['description'] . ' (' . $log['ip_address'] . ')', 1, 1, 'L', $fill);
+    }
+} else {
+    $pdf->Cell(0, 10, 'No detailed logs available for this month', 1, 1, 'C');
+}
+
+// Close and output PDF document
+$pdf->Output('device_' . $report_id . '_' . $monthName . '_report.pdf', 'I');
+

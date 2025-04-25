@@ -99,15 +99,15 @@ function getOfflineDevices($conn) {
 
 
 // Function to get high latency devices
-function getHighLatencyDevices($conn, $threshold = 100) {
+function getHighLatencyDevices($conn) {
     try {
-        $query = "SELECT ip_address, location, category, latency 
+        // Kukunin na ngayon lahat ng online devices at isa-sort by latency DESC
+        $query = "SELECT ip_address, location, category, description, latency 
                   FROM add_ip 
-                  WHERE latency > :threshold AND status = 'online'
+                  WHERE status = 'online'
                   ORDER BY latency DESC";
         
         $stmt = $conn->prepare($query);
-        $stmt->bindParam(':threshold', $threshold, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch(PDOException $e) {
@@ -313,4 +313,6 @@ $summaryData = getSummaryData($conn);
 $categoryStats = getCategoryStats($conn);
 $offlineDevices = getOfflineDevices($conn);
 $highLatencyDevices = getHighLatencyDevices($conn);
+
+
 ?>

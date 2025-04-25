@@ -1,48 +1,9 @@
-
 <?php include '../backend/dashboard.php'; ?>
+<?php include '../backend/monthly_stats.php'; ?>
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/loader.php'; ?>
 
-<!-- Sa <head>, pagkatapos ng DataTables CSS -->
-<style>
-  /* Table header */
-  #offlineTable thead th {
-    font-size: 0.75rem;  /* maliit na header */
-  }
-
-  /* Table body */
-  #offlineTable tbody td {
-    font-size: 0.65rem;  /* mas maliit pa ang body text */
-  }
-
-  /* Search box at length dropdown label at control */
-  #offlineTable_wrapper .dataTables_filter label,
-  #offlineTable_wrapper .dataTables_length label {
-    font-size: 0.7rem;
-  }
-  #offlineTable_wrapper .dataTables_filter input,
-  #offlineTable_wrapper .dataTables_length select {
-    font-size: 0.7rem;
-    padding: 0.25em 0.4em;  /* bawasan ang padding para mas compact */
-    height: auto;
-  }
-
-  /* Info text (“Showing X to Y of Z entries”) */
-  #offlineTable_wrapper .dataTables_info {
-    font-size: 0.7rem;
-  }
-
-  /* Pagination buttons */
-  #offlineTable_wrapper .dataTables_paginate .paginate_button {
-    font-size: 0.7rem;
-  }
-  /* Active/current page button */
-  #offlineTable_wrapper .dataTables_paginate .paginate_button.current {
-    background-color: #0d6efd;  /* Bootstrap primary bg */
-    color: white !important;
-    border: none;
-  }
-</style>
+<link rel="stylesheet" href="../css/report.css">
 
 <div class="container-fluid">
         <div class="row">
@@ -100,10 +61,96 @@
                     </div>
                     </div>
 
+
+                    <div class="row">
+                        <!-- Offline Devices Table -->
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header bg-dark text-white">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Offline Devices
+                                </div>
+                                <div class="card-body table-container">
+                                <table class="table table-hover" id="offlineTable">
+                                    <thead>
+                                        <tr>
+                                        <th>IP Address</th>
+                                        <th>Location</th>
+                                        <th>Category</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if(count($offlineDevices) > 0): ?>
+                                        <?php foreach($offlineDevices as $device): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($device['ip_address']) ?></td>
+                                            <td><?= htmlspecialchars($device['location']) ?></td>
+                                            <td><?= htmlspecialchars($device['category']) ?></td>
+                                            <td><?= htmlspecialchars($device['description']) ?></td>
+                                            <td><span class="badge bg-danger badge-sm">Offline</span></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </tbody>
+                                    </table>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- High Latency Devices Table -->
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header bg-dark text-white">
+                                    <i class="bi bi-speedometer me-2"></i> Latency Overview
+                                </div>
+                                <div class="card-body table-container">
+                                    <table class="table table-hover" id="latencyTable">
+                                        <thead>
+                                            <tr>
+                                                <th>IP Address</th>
+                                                <th>Location</th>
+                                                <th>Category</th>
+                                                <th>Description</th>
+                                                <th>Latency</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php 
+                                            $devices = getHighLatencyDevices($conn);
+                                            if (count($devices) > 0):
+                                                foreach ($devices as $device):
+                                                    $isHigh     = $device['latency'] > 100;
+                                                    $rowClass   = $isHigh ? 'high-latency' : 'low-latency';
+                                                    $badgeClass = $isHigh ? 'bg-danger'    : 'bg-success';
+                                                    $status     = $isHigh ? 'High'         : 'Low';
+                                            ?>
+                                            <tr class="<?= $rowClass ?>">
+                                                <td><?= htmlspecialchars($device['ip_address'], ENT_QUOTES) ?></td>
+                                                <td><?= htmlspecialchars($device['location'],   ENT_QUOTES) ?></td>
+                                                <td><?= htmlspecialchars($device['category'],   ENT_QUOTES) ?></td>
+                                                <td><?= htmlspecialchars($device['description'],ENT_QUOTES) ?></td>
+                                                <td class="d-flex justify-content-between align-items-center">
+                                                    <span><?= htmlspecialchars($device['latency'], ENT_QUOTES) ?> ms</span>
+                                                    <span class="badge <?= $badgeClass ?> badge-sm">
+                                                        <?= $status ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <?php 
+                                                endforeach;
+                                            ?>
+    
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                                         <!-- Category Cards -->
                     <div class="row">
                         <?php 
-                        // Define default icons for known categories
                         $categoryIcons = [
                             'LAN' => 'bi-ethernet',
                             'CCTV' => 'bi-camera-video',
@@ -153,87 +200,159 @@
                     </div>
 
                     <!-- Tables Section -->
-                    <div class="row">
-                        <!-- Offline Devices Table -->
-                        <div class="col-lg-6">
-                            <div class="card">
-                                <div class="card-header bg-dark text-white">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Offline Devices
-                                </div>
-                                <div class="card-body table-container">
-                                <table class="table table-hover" id="offlineTable">
-                                    <thead>
-                                        <tr>
-                                        <th>IP Address</th>
-                                        <th>Location</th>
-                                        <th>Category</th>
-                                        <th>Description</th>
-                                        <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php if(count($offlineDevices) > 0): ?>
-                                        <?php foreach($offlineDevices as $device): ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($device['ip_address']) ?></td>
-                                            <td><?= htmlspecialchars($device['location']) ?></td>
-                                            <td><?= htmlspecialchars($device['category']) ?></td>
-                                            <td><?= htmlspecialchars($device['description']) ?></td>
-                                            <td><span class="badge bg-danger">Offline</span></td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                        <?php else: ?>
-                                        <tr>
-                                            <td colspan="5" class="text-center">No offline devices</td>
-                                        </tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                    </table>
+                 
+                        
+                        <?php
+                            $filterCategoriesStmt = $conn->query("
+                                SELECT DISTINCT category 
+                                FROM add_ip 
+                                WHERE category IS NOT NULL 
+                                AND category <> ''
+                                ORDER BY category
+                            ");
+                            $filterCategories = $filterCategoriesStmt->fetchAll(PDO::FETCH_COLUMN);
 
+                            $filterLocationsStmt = $conn->query("
+                                SELECT DISTINCT location 
+                                FROM add_ip 
+                                WHERE location IS NOT NULL 
+                                AND location <> ''
+                                ORDER BY location
+                            ");
+                            $filterLocations = $filterLocationsStmt->fetchAll(PDO::FETCH_COLUMN);
+                        ?>
+
+                        <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                            <div class="card-header bg-dark text-white">
+                                <i class="bi bi-calendar-check me-2"></i> Monthly Network Uptime Statistics
+                            </div>
+                            <div class="card-body table-container">
+
+                                <!-- 2. FILTERS -->
+                                <div class="filter-container mb-3">
+                                <select id="categoryFilter" class="form-select d-inline-block w-auto me-2">
+                                    <option value="">All Categories</option>
+                                    <?php foreach($filterCategories as $cat): ?>
+                                    <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+
+                                <select id="locationFilter" class="form-select d-inline-block w-auto">
+                                    <option value="">All Locations</option>
+                                    <?php foreach($filterLocations as $loc): ?>
+                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                                 </div>
+
+                                <!-- 3. DATA TABLE -->
+                                <table class="table table-hover" id="monthlyStatsTable">
+                                <thead>
+                                    <tr>
+                                    <th>IP Address</th>
+                                    <th>Location</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Offline Events</th>
+                                    <th>Monthly Uptime %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php 
+                                    $monthlyStats = getMonthlyUptimeStats($conn);
+                                    if(count($monthlyStats) > 0): 
+                                    foreach($monthlyStats as $device): 
+                                        // Set row class based on uptime percentage
+                                        if($device['uptime_percentage'] >= 99) {
+                                        $rowClass = "uptime-excellent";
+                                        } elseif($device['uptime_percentage'] >= 95) {
+                                        $rowClass = "uptime-good";
+                                        } elseif($device['uptime_percentage'] >= 90) {
+                                        $rowClass = "uptime-warning";
+                                        } else {
+                                        $rowClass = "uptime-critical";
+                                        }
+                                    ?>
+                                    <tr class="<?= $rowClass ?>">
+                                    <td><?= htmlspecialchars($device['ip_address']) ?></td>
+                                    <td><?= htmlspecialchars($device['location']) ?></td>
+                                    <td><?= htmlspecialchars($device['category']) ?></td>
+                                    <td><?= htmlspecialchars($device['description']) ?></td>
+                                    <td><?= $device['offline_events'] ?></td>
+                                    <td><?= number_format($device['uptime_percentage'], 2) ?>%</td>
+                                    </tr>
+                                    <?php 
+                                    endforeach;
+                                    endif; 
+                                    ?>
+                                </tbody>
+                                </table>
+
+                            </div>
                             </div>
                         </div>
-
-                        <!-- High Latency Devices Table -->
-                        <div class="col-lg-6">
-                            <div class="card">
-                                <div class="card-header bg-dark text-white">
-                                    <i class="bi bi-speedometer me-2"></i> High Latency Devices
-                                </div>
-                                <div class="card-body table-container">
-                                    <table class="table table-hover" id="latencyTable">
-                                        <thead>
-                                            <tr>
-                                                <th>IP Address</th>
-                                                <th>Location</th>
-                                                <th>Category</th>
-                                                <th>Latency</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php if(count($highLatencyDevices) > 0): ?>
-                                                <?php foreach($highLatencyDevices as $device): ?>
-                                                <tr class="<?= $device['latency'] > 200 ? 'high-latency' : '' ?>">
-                                                    <td><?= $device['ip_address'] ?></td>
-                                                    <td><?= $device['location'] ?></td>
-                                                    <td><?= $device['category'] ?></td>
-                                                    <td><?= $device['latency'] ?> ms</td>
-                                                </tr>
-                                                <?php endforeach; ?>
-                                            <?php else: ?>
-                                                <tr>
-                                                    <td colspan="4" class="text-center">No high latency devices</td>
-                                                </tr>
-                                            <?php endif; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
+    
    <script src="../js/dashboard.js"></script>
+
+   
+   <script>
+$(document).ready(function() {
+  // Initialize DataTables with export buttons
+  $('#monthlyStatsTable').DataTable({
+    dom: 'Bfrtip',
+    buttons: [
+      'copy', 'excel', 'pdf', 'print'
+    ],
+    pageLength: 10,
+    order: [[5, 'desc']]
+  });
+});
+</script>
+
+<script>
+$(document).ready(function() {
+  var $table = $('#monthlyStatsTable');
+
+  // If not yet initialized, init; otherwise reuse existing instance
+  var table = $.fn.dataTable.isDataTable($table)
+    ? $table.DataTable()
+    : $table.DataTable({
+        dom: 'Bfrtip',
+        processing: true,
+        language: {
+          processing: '<div class="spinner-border" role="status"><span class="visually-hidden">Loading…</span></div>'
+        },
+        buttons: ['copy', 'excel', 'pdf', 'print'],
+        pageLength: 10,
+        order: [[5, 'desc']]
+      });
+
+  $('#categoryFilter, #locationFilter').on('change', function() {
+    // show overlay
+    $('.table-container').append(`
+      <div class="loader-overlay">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading…</span>
+        </div>
+      </div>`);
+    
+    table
+      .column(2).search($('#categoryFilter').val())
+      .column(1).search($('#locationFilter').val())
+      .draw();
+  });
+
+  table.on('draw.dt', function() {
+    $('.loader-overlay').remove();
+  });
+});
+
+</script>
