@@ -21,17 +21,12 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'reports.php') ? 'active' : ''; ?>" href="reports.php">
+                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'overall_report.php') ? 'active' : ''; ?>" href="/views/overall_report.php">
                     <i class="fas fa-chart-bar"></i> <span class="menu-text">Reports</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'settings.php') ? 'active' : ''; ?>" href="settings.php">
-                    <i class="fas fa-cog"></i> <span class="menu-text">Settings</span>
-                </a>
-            </li>
             <li class="nav-item logout-item">
-                <a class="nav-link" href="/login.php">
+                <a class="nav-link" href="../logout.php">
                     <i class="fas fa-sign-out-alt"></i> <span class="menu-text">Logout</span>
                 </a>
             </li>

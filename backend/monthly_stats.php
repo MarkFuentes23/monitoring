@@ -107,3 +107,4 @@ function getMonthlyUptimeStats($conn) {
     
     return $results;
 }
+

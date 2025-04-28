@@ -228,3 +228,23 @@
    font-size: 0.7rem !important;
    padding: 0.25em 0.5em !important;
  }
+
+ .header-actions .dt-buttons .btn {
+  margin-right: 0.3rem;
+}
+.form-select-sm {
+  min-width: 130px;
+}
+
+/* Override DataTables button float & stacking */
+.header-actions .dt-buttons {
+  float: none !important;           /* kill the default float:left */
+  display: inline-flex !important;  /* lay out as a flex-row */
+  flex-wrap: nowrap !important;     /* prevent wrapping */
+  gap: 0.3rem;                      /* space between buttons */
+}
+
+/* Tidy up individual buttons */
+.header-actions .dt-buttons .btn {
+  margin: 0;                        /* remove any extra margins */
+}

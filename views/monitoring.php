@@ -147,7 +147,7 @@ if (!isset($categoryData['Uncategorized'])) {
                           <td><?= htmlspecialchars($row['ip_address']) ?></td>
                           <td><?= htmlspecialchars($row['description']) ?></td>
                           <td><?= htmlspecialchars($row['location']) ?></td>
-                          <td id="status-<?= strtolower(str_replace(' ', '-', $categoryName)) ?>-<?= $row['id'] ?>">
+                          <td id="status-<?= $row['id'] ?>">
                             <span class="badge badge-smaller <?= $row['status'] === 'online' ? 'bg-success' : 'bg-danger' ?>">
                               <?= ucfirst($row['status']) ?>
                             </span>
@@ -159,26 +159,24 @@ if (!isset($categoryData['Uncategorized'])) {
                             </span>
                           </td>
                           <td>
-                            <div class="btn-group">
-                              <button type="button"
-                                      class="btn btn-sm btn-primary view-details btn-xs"
-                                      data-bs-toggle="modal"
-                                      data-bs-target="#dataModal"
-                                      data-date="<?= htmlspecialchars($row['date']) ?>"
-                                      data-ip="<?= htmlspecialchars($row['ip_address']) ?>"
-                                      data-description="<?= htmlspecialchars($row['description']) ?>"
-                                      data-location="<?= htmlspecialchars($row['location']) ?>"
-                                      data-category="<?= htmlspecialchars(isset($row['category']) ? $row['category'] : '') ?>">
-                                View
-                              </button>
-                              <a href="report.php?report=<?= $row['id'] ?>"
-                                class="btn btn-sm btn-success btn-xs">Report</a>
-                            </div>
+                            <!-- Report button -->
+                            <a href="report.php?report=<?= $row['id'] ?>" class="btn btn-sm btn-success btn-xs" onclick="event.stopPropagation()"><i class="fas fa-file-alt me-1"></i>                            </a>
+                            <!-- Update button -->
+                            <button  type="button" class="btn btn-sm btn-primary btn-xs btn-update" data-id="<?= $row['id'] ?>" data-ip="<?= htmlspecialchars($row['ip_address']) ?>"
+                            data-desc="<?= htmlspecialchars($row['description']) ?>" data-loc="<?= htmlspecialchars($row['location']) ?>" data-cat="<?= htmlspecialchars($row['category']) ?>" onclick="event.stopPropagation()" data-bs-toggle="modal" data-bs-target="#updateModal"> <i class="fas fa-edit me-1"></i>
+                            </button>
+
+                            <!-- Delete button -->
+                            <form method="post" action="../backend/process.php" class="delete-form" style="display: inline;">
+                            <input type="hidden" name="action" value="delete_data"> <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                            <button type="button" class="btn btn-sm btn-danger btn-xs btn-delete" onclick="event.stopPropagation()"> <i class="fas fa-trash-alt me-1"></i> </button>
+                            </form>
                           </td>
                         </tr>
                         <?php endforeach; ?>
                       <?php endif; ?>
                     </tbody>
+
                   </table>
                 </div>
               </div>
@@ -194,78 +192,110 @@ if (!isset($categoryData['Uncategorized'])) {
         <?php endif; ?>
       </div>
 
-      <!-- Data Details Modal -->
-      <div class="modal fade" id="dataModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header py-2">
-              <h5 class="modal-title">Data Details</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-              <p class="mb-1"><strong>Date:</strong> <span id="modal-date"></span></p>
-              <p class="mb-1"><strong>IP:</strong> <span id="modal-ip"></span></p>
-              <p class="mb-1"><strong>Description:</strong> <span id="modal-description"></span></p>
-              <p class="mb-1"><strong>Location:</strong> <span id="modal-location"></span></p>
-              <p class="mb-1"><strong>Category:</strong> <span id="modal-category"></span></p>
-            </div>
-            <div class="modal-footer py-1">
-              <button type="button" class="btn btn-secondary btn-sm"
-                      data-bs-dismiss="modal">Close</button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- Add Data Modal -->
       <div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-          <form action="../backend/process.php" method="POST" class="modal-content">
-            <input type="hidden" name="action" value="add_data">
-            <div class="modal-header py-2">
-              <h5 class="modal-title">Add New Data</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="modal-dialog modal-lg">
+        <form action="../backend/process.php" method="POST" class="modal-content">
+          <input type="hidden" name="action" value="add_data">
+          <div class="modal-header py-2">
+            <h5 class="modal-title">Add New Data (Single / Bulk)</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Container for dynamic rows -->
+            <div id="row-container">
+              <div class="row mb-2 data-row">
+                <div class="col-md-3">
+                  <label class="form-label small">IP Address</label>
+                  <input type="text" name="ip_address[]" class="form-control form-control-sm" required>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small">Description</label>
+                  <textarea name="description[]" class="form-control form-control-sm" rows="1" required></textarea>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label small">Location</label>
+                  <select name="location[]" class="form-control form-control-sm" required>
+                    <option value="">-- Select --</option>
+                    <?php foreach($locations as $loc): ?>
+                      <option value="<?= htmlspecialchars($loc['location']) ?>"><?= htmlspecialchars($loc['location']) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label small">Category</label>
+                  <select name="category[]" class="form-control form-control-sm" required>
+                    <option value="">-- Select --</option>
+                    <?php foreach($categories as $cat): ?>
+                      <option value="<?= htmlspecialchars($cat['category']) ?>"><?= htmlspecialchars($cat['category']) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                  <button type="button" class="btn btn-sm btn-danger remove-row">&times;</button>
+                </div>
+              </div>
             </div>
-            <div class="modal-body">
-              <div class="mb-2">
-                <label class="form-label small">Date</label>
-                <input type="date" name="date" class="form-control form-control-sm" required>
-              </div>
-              <div class="mb-2">
-                <label class="form-label small">IP Address</label>
-                <input type="text" name="ip_address" class="form-control form-control-sm" required>
-              </div>
-              <div class="mb-2">
-                <label class="form-label small">Description</label>
-                <textarea name="description" class="form-control form-control-sm" rows="2" required></textarea>
-              </div>
-              <div class="mb-2">
-                <label class="form-label small">Location</label>
-                <select name="location" class="form-control form-control-sm" required>
-                  <option value="">-- Select Location --</option>
-                  <?php foreach($locations as $loc): ?>
-                    <option value="<?= htmlspecialchars($loc['location']) ?>"><?= htmlspecialchars($loc['location']) ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-              <div class="mb-2">
-                <label class="form-label small">Category</label>
-                <select name="category" class="form-control form-control-sm" required>
-                  <option value="">-- Select Category --</option>
-                  <?php foreach($categories as $cat): ?>
-                    <option value="<?= htmlspecialchars($cat['category']) ?>"><?= htmlspecialchars($cat['category']) ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-            </div>
-            <div class="modal-footer py-1">
-              <button type="button" class="btn btn-secondary btn-sm"
-                      data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-primary btn-sm">Save</button>
-            </div>
-          </form>
-        </div>
+
+            <button type="button" id="add-row" class="btn btn-sm btn-outline-secondary mb-2">
+              <i class="fas fa-plus me-1"></i> Add Row
+            </button>
+          </div>
+          <div class="modal-footer py-1">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save All</button>
+          </div>
+        </form>
       </div>
+    </div>
+
+      <!-- Update Data Modal -->
+        <div class="modal fade" id="updateModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <form action="../backend/monitoring_update.php" method="POST" class="modal-content">
+              <input type="hidden" name="action" value="update_data">
+              <input type="hidden" name="id" id="update-id">
+              <div class="modal-header py-2">
+                <h5 class="modal-title">Update Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-2">
+                  <label class="form-label small">IP Address</label>
+                  <input type="text" name="ip_address" id="update-ip" class="form-control form-control-sm" required>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">Description</label>
+                  <textarea name="description" id="update-desc" class="form-control form-control-sm" rows="2" required></textarea>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">Location</label>
+                  <select name="location" id="update-loc" class="form-control form-control-sm" required>
+                    <option value="">-- Select Location --</option>
+                    <?php foreach($locations as $loc): ?>
+                      <option value="<?= htmlspecialchars($loc['location']) ?>"><?= htmlspecialchars($loc['location']) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">Category</label>
+                  <select name="category" id="update-cat" class="form-control form-control-sm" required>
+                    <option value="">-- Select Category --</option>
+                    <?php foreach($categories as $cat): ?>
+                      <option value="<?= htmlspecialchars($cat['category']) ?>"><?= htmlspecialchars($cat['category']) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer py-1">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
 
       <!-- Add Location & Category Modal -->
       <div class="modal fade" id="addLocationCategoryModal" tabindex="-1" aria-hidden="true">
@@ -300,3 +330,80 @@ if (!isset($categoryData['Uncategorized'])) {
 </div>
 
 <script src="../js/monitoring.js"> </script>
+<SCript>
+  document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.btn-delete').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();  // Huwag patakbuhin row click
+      const form = this.closest('form');
+
+      Swal.fire({
+        title: 'Are you sure?',
+        text: "This action cannot be undone.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          form.submit();
+        }
+      });
+    });
+  });
+});
+</SCript>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Populate update-modal when any .btn-update is clicked
+  document.querySelectorAll('.btn-update').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // grab from data-attributes
+      const id   = btn.getAttribute('data-id');
+      const ip   = btn.getAttribute('data-ip');
+      const desc = btn.getAttribute('data-desc');
+      const loc  = btn.getAttribute('data-loc');
+      const cat  = btn.getAttribute('data-cat');
+
+      // set into modal fields
+      document.getElementById('update-id').value         = id;
+      document.getElementById('update-ip').value         = ip;
+      document.getElementById('update-desc').value       = desc;
+      document.getElementById('update-loc').value        = loc;
+      document.getElementById('update-cat').value        = cat;
+    });
+  });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('row-container');
+  const addBtn = document.getElementById('add-row');
+
+  // Add new row
+  addBtn.addEventListener('click', () => {
+    const firstRow = container.querySelector('.data-row');
+    const newRow = firstRow.cloneNode(true);
+    // Clear inputs
+    newRow.querySelectorAll('input, textarea').forEach(el => el.value = '');
+    newRow.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
+    container.appendChild(newRow);
+    attachRemove(newRow);
+  });
+
+  // Attach remove handler to existing rows
+  function attachRemove(row) {
+    row.querySelector('.remove-row').addEventListener('click', () => {
+      if (container.querySelectorAll('.data-row').length > 1) {
+        row.remove();
+      }
+    });
+  }
+
+  // Initialize remove on the first row
+  container.querySelectorAll('.data-row').forEach(r => attachRemove(r));
+});
+</script>

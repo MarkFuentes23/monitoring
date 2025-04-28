@@ -148,6 +148,91 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Chart Section - Add this after the Category Cards section -->
+                            <div class="row mt-4">
+                            <!-- LAN Latency Chart -->
+                            <div class="col-12 col-xl-6 mb-4">
+                                <div class="card">
+                                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                                    <div><i class="bi bi-ethernet me-2"></i> LAN Latency Trends</div>
+                                    <div class="filter-controls d-flex">
+                                    <select class="form-select form-select-sm me-2 lan-ip-filter">
+                                        <option value="">All IPs</option>
+                                    </select>
+                                    <select class="form-select form-select-sm me-2 lan-location-filter">
+                                        <option value="">All Locations</option>
+                                    </select>
+                                    <select class="form-select form-select-sm me-2 lan-month-filter">
+                                        <option value="1">January</option>
+                                        <option value="2">February</option>
+                                        <option value="3">March</option>
+                                        <option value="4">April</option>
+                                        <option value="5">May</option>
+                                        <option value="6">June</option>
+                                        <option value="7">July</option>
+                                        <option value="8">August</option>
+                                        <option value="9">September</option>
+                                        <option value="10">October</option>
+                                        <option value="11">November</option>
+                                        <option value="12">December</option>
+                                    </select>
+                                    <select class="form-select form-select-sm lan-year-filter">
+                                        <option value="2023">2023</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2025">2025</option>
+                                    </select>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                    <canvas id="lanLatencyChart" style="width:100%; height:300px;"></canvas>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+
+                            <!-- Internet Latency Chart -->
+                            <div class="col-12 col-xl-6 mb-4">
+                                <div class="card">
+                                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                                    <div><i class="bi bi-globe me-2"></i> Internet Latency Trends</div>
+                                    <div class="filter-controls d-flex">
+                                    <select class="form-select form-select-sm me-2 internet-ip-filter">
+                                        <option value="">All IPs</option>
+                                    </select>
+                                    <select class="form-select form-select-sm me-2 internet-location-filter">
+                                        <option value="">All Locations</option>
+                                    </select>
+                                    <select class="form-select form-select-sm me-2 internet-month-filter">
+                                        <option value="1">January</option>
+                                        <option value="2">February</option>
+                                        <option value="3">March</option>
+                                        <option value="4">April</option>
+                                        <option value="5">May</option>
+                                        <option value="6">June</option>
+                                        <option value="7">July</option>
+                                        <option value="8">August</option>
+                                        <option value="9">September</option>
+                                        <option value="10">October</option>
+                                        <option value="11">November</option>
+                                        <option value="12">December</option>
+                                    </select>
+                                    <select class="form-select form-select-sm internet-year-filter">
+                                        <option value="2023">2023</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2025">2025</option>
+                                    </select>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                    <canvas id="internetLatencyChart" style="width:100%; height:300px;"></canvas>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                            </div>
                                         <!-- Category Cards -->
                     <div class="row">
                         <?php 
@@ -225,29 +310,36 @@
                         <div class="row mt-4">
                         <div class="col-12">
                             <div class="card">
-                            <div class="card-header bg-dark text-white">
-                                <i class="bi bi-calendar-check me-2"></i> Monthly Network Uptime Statistics
-                            </div>
-                            <div class="card-body table-container">
+                            <!-- 1. CARD HEADER with title on left, buttons+filters on right -->
+                            <div class="card-header d-flex justify-content-between align-items-center bg-dark text-white">
+                                <div>
+                                <i class="bi bi-calendar-check me-2"></i>
+                                Monthly Network Uptime Statistics
+                                </div>
+                                <div class="header-actions d-flex align-items-center">
+                                <!-- DataTables buttons placeholder -->
+                                <div class="dt-buttons btn-group me-3"></div>
 
-                                <!-- 2. FILTERS -->
-                                <div class="filter-container mb-3">
-                                <select id="categoryFilter" class="form-select d-inline-block w-auto me-2">
+                                <!-- Category filter -->
+                                <select id="categoryFilter" class="form-select form-select-sm me-2">
                                     <option value="">All Categories</option>
                                     <?php foreach($filterCategories as $cat): ?>
                                     <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
                                     <?php endforeach; ?>
                                 </select>
 
-                                <select id="locationFilter" class="form-select d-inline-block w-auto">
+                                <!-- Location filter -->
+                                <select id="locationFilter" class="form-select form-select-sm">
                                     <option value="">All Locations</option>
                                     <?php foreach($filterLocations as $loc): ?>
                                     <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                                 </div>
+                            </div>
 
-                                <!-- 3. DATA TABLE -->
+                            <!-- 2. TABLE BODY -->
+                            <div class="card-body table-container">
                                 <table class="table table-hover" id="monthlyStatsTable">
                                 <thead>
                                     <tr>
@@ -262,18 +354,11 @@
                                 <tbody>
                                     <?php 
                                     $monthlyStats = getMonthlyUptimeStats($conn);
-                                    if(count($monthlyStats) > 0): 
-                                    foreach($monthlyStats as $device): 
-                                        // Set row class based on uptime percentage
-                                        if($device['uptime_percentage'] >= 99) {
-                                        $rowClass = "uptime-excellent";
-                                        } elseif($device['uptime_percentage'] >= 95) {
-                                        $rowClass = "uptime-good";
-                                        } elseif($device['uptime_percentage'] >= 90) {
-                                        $rowClass = "uptime-warning";
-                                        } else {
-                                        $rowClass = "uptime-critical";
-                                        }
+                                    foreach($monthlyStats as $device):
+                                        if($device['uptime_percentage'] >= 99)       $rowClass = "uptime-excellent";
+                                        elseif($device['uptime_percentage'] >= 95)   $rowClass = "uptime-good";
+                                        elseif($device['uptime_percentage'] >= 90)   $rowClass = "uptime-warning";
+                                        else                                         $rowClass = "uptime-critical";
                                     ?>
                                     <tr class="<?= $rowClass ?>">
                                     <td><?= htmlspecialchars($device['ip_address']) ?></td>
@@ -283,13 +368,9 @@
                                     <td><?= $device['offline_events'] ?></td>
                                     <td><?= number_format($device['uptime_percentage'], 2) ?>%</td>
                                     </tr>
-                                    <?php 
-                                    endforeach;
-                                    endif; 
-                                    ?>
+                                    <?php endforeach; ?>
                                 </tbody>
                                 </table>
-
                             </div>
                             </div>
                         </div>
@@ -303,19 +384,65 @@
    <script src="../js/dashboard.js"></script>
 
    
-   <script>
+
+<!-- DataTables + Buttons init -->
+<script>
 $(document).ready(function() {
-  // Initialize DataTables with export buttons
-  $('#monthlyStatsTable').DataTable({
-    dom: 'Bfrtip',
+  var table = $('#monthlyStatsTable').DataTable({
+    dom: 'Bfti',  // remove default button placeholder
     buttons: [
-      'copy', 'excel', 'pdf', 'print'
+      {
+        extend: 'copy',
+        text: '<i class="bi bi-clipboard me-1"></i>Copy',
+        className: 'btn btn-sm btn-outline-secondary'
+      },
+      {
+        extend: 'excel',
+        text: '<i class="bi bi-file-earmark-excel me-1"></i>Excel',
+        className: 'btn btn-sm btn-outline-success'
+      },
+      {
+        extend: 'pdf',
+        text: '<i class="bi bi-file-earmark-pdf me-1"></i>PDF',
+        className: 'btn btn-sm btn-outline-danger'
+      },
+      {
+        extend: 'print',
+        text: '<i class="bi bi-printer me-1"></i>Print',
+        className: 'btn btn-sm btn-outline-primary'
+      }
     ],
     pageLength: 10,
-    order: [[5, 'desc']]
+    order: [[5, 'desc']],
+    processing: true,
+    language: {
+      processing: '<div class="spinner-border" role="status"><span class="visually-hidden">Loading…</span></div>'
+    }
+  });
+
+  // move buttons into our thead actions row
+  table.buttons().container().appendTo('#monthlyStatsTable thead .dt-buttons');
+
+  // filters
+  $('#categoryFilter, #locationFilter').on('change', function() {
+    $('.table-container').append(`
+      <div class="loader-overlay">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading…</span>
+        </div>
+      </div>`);
+    table
+      .column(2).search($('#categoryFilter').val())
+      .column(1).search($('#locationFilter').val())
+      .draw();
+  });
+
+  table.on('draw.dt', function() {
+    $('.loader-overlay').remove();
   });
 });
 </script>
+
 
 <script>
 $(document).ready(function() {
@@ -354,5 +481,403 @@ $(document).ready(function() {
     $('.loader-overlay').remove();
   });
 });
+</script>
 
+
+<!-- Add this JavaScript code before the closing </body> tag -->
+
+<script>
+$(document).ready(function() {
+  // Initialize charts and filters
+  const lanCtx = document.getElementById('lanLatencyChart').getContext('2d');
+  const internetCtx = document.getElementById('internetLatencyChart').getContext('2d');
+  let lanChart, internetChart;
+  
+  // Current date for default settings
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  
+  // Set default months and years in filters
+  $('.lan-month-filter, .internet-month-filter').val(currentMonth);
+  $('.lan-year-filter, .internet-year-filter').val(currentYear);
+  
+  // Function to format dates for display
+  function formatDay(day) {
+    return day < 10 ? '0' + day : day;
+  }
+  
+  // Generate days in a month
+  function getDaysInMonth(month, year) {
+    return new Date(year, month, 0).getDate();
+  }
+  
+  function generateLabels(month, year) {
+    const daysInMonth = getDaysInMonth(month, year);
+    return Array.from({length: daysInMonth}, (_, i) => 
+      `${year}-${month < 10 ? '0' + month : month}-${formatDay(i + 1)}`
+    );
+  }
+  
+  // Load IP addresses and locations for each category
+  function loadFilterOptions() {
+    $.ajax({
+      url: 'get_filter_options.php',
+      type: 'GET',
+      dataType: 'json',
+      success: function(response) {
+        // Populate LAN IP filter
+        if (response.lan && response.lan.ips) {
+          $('.lan-ip-filter').empty().append('<option value="">All IPs</option>');
+          response.lan.ips.forEach(ip => {
+            $('.lan-ip-filter').append(`<option value="${ip.id}">${ip.ip_address} - ${ip.description}</option>`);
+          });
+        }
+        
+        // Populate LAN location filter
+        if (response.lan && response.lan.locations) {
+          $('.lan-location-filter').empty().append('<option value="">All Locations</option>');
+          response.lan.locations.forEach(location => {
+            $('.lan-location-filter').append(`<option value="${location}">${location}</option>`);
+          });
+        }
+        
+        // Populate Internet IP filter
+        if (response.internet && response.internet.ips) {
+          $('.internet-ip-filter').empty().append('<option value="">All IPs</option>');
+          response.internet.ips.forEach(ip => {
+            $('.internet-ip-filter').append(`<option value="${ip.id}">${ip.ip_address} - ${ip.description}</option>`);
+          });
+        }
+        
+        // Populate Internet location filter
+        if (response.internet && response.internet.locations) {
+          $('.internet-location-filter').empty().append('<option value="">All Locations</option>');
+          response.internet.locations.forEach(location => {
+            $('.internet-location-filter').append(`<option value="${location}">${location}</option>`);
+          });
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error('Error loading filter options:', error);
+      }
+    });
+  }
+  
+  // Fetch latency data for a chart
+  function fetchLatencyData(chartType) {
+    const isLAN = chartType === 'lan';
+    const chartContainer = isLAN ? $(lanCtx.canvas).parent() : $(internetCtx.canvas).parent();
+    const month = isLAN ? $('.lan-month-filter').val() : $('.internet-month-filter').val();
+    const year = isLAN ? $('.lan-year-filter').val() : $('.internet-year-filter').val();
+    const ipId = isLAN ? $('.lan-ip-filter').val() : $('.internet-ip-filter').val();
+    const location = isLAN ? $('.lan-location-filter').val() : $('.internet-location-filter').val();
+    
+    chartContainer.append(`
+      <div class="loader-overlay">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading…</span>
+        </div>
+      </div>`);
+      
+    $.ajax({
+      url: 'get_latency_data.php',
+      type: 'GET',
+      data: {
+        category: isLAN ? 'LAN' : 'Internet',
+        month: month,
+        year: year,
+        ip_id: ipId,
+        location: location,
+        view_type: month == 0 ? 'year' : 'month'
+      },
+      dataType: 'json',
+      success: function(response) {
+        updateChart(chartType, response, month, year);
+        chartContainer.find('.loader-overlay').remove();
+      },
+      error: function(xhr, status, error) {
+        console.error(`Error fetching ${chartType} data:`, error);
+        console.log('Raw response:', xhr.responseText);
+        chartContainer.find('.loader-overlay').remove();
+        chartContainer.append('<div class="alert alert-danger">Failed to load chart data</div>');
+      }
+    });
+  }
+  
+  // Update chart with new data
+  function updateChart(chartType, data, month, year) {
+    const isLAN = chartType === 'lan';
+    const ctx = isLAN ? lanCtx : internetCtx;
+    let chart = isLAN ? lanChart : internetChart;
+    const isYearView = month == 0;
+    
+    let labels, chartData;
+    
+    if (isYearView) {
+      // Year view: show all months
+      labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      chartData = Array(12).fill(0);
+      
+      // Fill in data for months that have values
+      data.forEach(item => {
+        const monthIndex = parseInt(item.month) - 1;
+        chartData[monthIndex] = parseFloat(item.avg_latency);
+      });
+    } else {
+      // Month view: show days in month
+      labels = generateLabels(month, year);
+      
+      // Create dataset with zeros for days without data
+      chartData = labels.map(label => {
+        const matchingDay = data.find(item => item.log_date === label);
+        return matchingDay ? parseFloat(matchingDay.avg_latency) : 0;
+      });
+      
+      // Convert labels to just day numbers for display
+      labels = labels.map(date => date.split('-')[2]);
+    }
+    
+    // Destroy previous chart if it exists
+    if (chart) {
+      chart.destroy();
+    }
+    
+    // Create new chart with enhanced elegant design
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    
+    if (isLAN) {
+      // Blue theme for LAN
+      gradient.addColorStop(0, 'rgba(56, 128, 255, 0.7)');
+      gradient.addColorStop(0.5, 'rgba(56, 128, 255, 0.2)');
+      gradient.addColorStop(1, 'rgba(56, 128, 255, 0.05)');
+    } else {
+      // Green theme for Internet
+      gradient.addColorStop(0, 'rgba(11, 186, 133, 0.7)');
+      gradient.addColorStop(0.5, 'rgba(11, 186, 133, 0.2)');
+      gradient.addColorStop(1, 'rgba(11, 186, 133, 0.05)');
+    }
+    
+    // Shadow configuration for more depth
+    Chart.defaults.font.family = "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif";
+    
+    const newChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: isLAN ? 'LAN Average Latency (ms)' : 'Internet Average Latency (ms)',
+          data: chartData,
+          borderColor: isLAN ? '#3880ff' : '#0bba85',
+          backgroundColor: gradient,
+          borderWidth: 2.5,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: isLAN ? '#3880ff' : '#0bba85',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: isLAN ? '#3880ff' : '#0bba85',
+          pointHoverBorderWidth: 2,
+          pointHitRadius: 10,
+          shadowOffsetX: 3,
+          shadowOffsetY: 3,
+          shadowBlur: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.2)',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            top: 15,
+            right: 25,
+            bottom: 15,
+            left: 15
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(200, 200, 200, 0.15)',
+              drawBorder: false,
+              lineWidth: 0.5
+            },
+            border: {
+              display: false
+            },
+            title: {
+              display: true,
+              text: 'Latency (ms)',
+              font: {
+                size: 14,
+                weight: '500',
+                family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+              },
+              color: '#555'
+            },
+            ticks: {
+              callback: function(value) {
+                return value + ' ms';
+              },
+              font: {
+                size: 11,
+                family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+              },
+              color: '#888',
+              padding: 10
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            },
+            border: {
+              display: false
+            },
+            title: {
+              display: true,
+              text: isYearView 
+                ? `Months in ${year}` 
+                : `Days in ${new Date(year, month-1).toLocaleString('default', { month: 'long' })} ${year}`,
+              font: {
+                size: 14,
+                weight: '500',
+                family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+              },
+              color: '#555',
+              padding: 10
+            },
+            ticks: {
+              font: {
+                size: 11,
+                family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+              },
+              color: '#888',
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: isYearView ? 12 : 15
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            backgroundColor: 'rgba(33, 33, 44, 0.85)',
+            titleFont: {
+              size: 13,
+              weight: '600',
+              family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+            },
+            bodyFont: {
+              size: 12,
+              family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+            },
+            padding: 14,
+            cornerRadius: 8,
+            displayColors: false,
+            boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+            borderColor: isLAN ? 'rgba(56, 128, 255, 0.3)' : 'rgba(11, 186, 133, 0.3)',
+            borderWidth: 1,
+            caretSize: 6,
+            callbacks: {
+              title: function(tooltipItems) {
+                if (isYearView) {
+                  return `${tooltipItems[0].label} ${year}`;
+                } else {
+                  const monthName = new Date(year, month-1).toLocaleString('default', { month: 'long' });
+                  return `${monthName} ${tooltipItems[0].label}, ${year}`;
+                }
+              },
+              label: function(context) {
+                return `Latency: ${context.raw.toFixed(2)} ms`;
+              }
+            }
+          },
+          legend: {
+            display: true,
+            position: 'top',
+            align: 'end',
+            labels: {
+              boxWidth: 15,
+              usePointStyle: true,
+              pointStyle: 'circle',
+              padding: 20,
+              font: {
+                size: 12,
+                weight: '500',
+                family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+              },
+              color: '#555'
+            }
+          },
+          filler: {
+            propagate: true
+          }
+        },
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        elements: {
+          line: {
+            borderJoinStyle: 'round',
+            cubicInterpolationMode: 'monotone' 
+          },
+          point: {
+            hitRadius: 8
+          }
+        },
+        animation: {
+          duration: 1200,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+    
+    // Add drop shadow to chart canvas
+    ctx.canvas.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+    
+    // Update the chart reference
+    if (isLAN) {
+      lanChart = newChart;
+    } else {
+      internetChart = newChart;
+    }
+  }
+  
+  // Filter change event handlers
+  $('.lan-ip-filter, .lan-location-filter, .lan-month-filter, .lan-year-filter').on('change', function() {
+    fetchLatencyData('lan');
+  });
+  
+  $('.internet-ip-filter, .internet-location-filter, .internet-month-filter, .internet-year-filter').on('change', function() {
+    fetchLatencyData('internet');
+  });
+  
+  // Add yearly view option to month filters
+  $('.lan-month-filter, .internet-month-filter').each(function() {
+    $(this).prepend('<option value="0">Full Year</option>');
+  });
+  
+  // Enhance the UI elements
+  $('.card').addClass('shadow-sm border-0');
+  $('.card-header').addClass('border-bottom-0');
+  $('.form-select').addClass('border-0 shadow-sm');
+  $('.chart-container').addClass('p-2');
+  
+  // Initial data load
+  loadFilterOptions();
+  fetchLatencyData('lan');
+  fetchLatencyData('internet');
+  
+  // Refresh data when "Refresh Data" button is clicked
+  $('#refreshBtn').on('click', function() {
+    fetchLatencyData('lan');
+    fetchLatencyData('internet');
+  });
+});
 </script>

@@ -149,3 +149,5 @@ function refreshLatency() {
     .catch(console.error)
     .finally(hideLoader);
 }
+
+
