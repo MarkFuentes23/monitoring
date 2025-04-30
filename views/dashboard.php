@@ -1,13 +1,14 @@
 <?php include '../backend/dashboard.php'; ?>
 <?php include '../backend/monthly_stats.php'; ?>
 <?php include '../includes/header.php'; ?>
-<?php include '../includes/loader.php'; ?>
+
 
 <link rel="stylesheet" href="../css/report.css">
 
-<div class="container-fluid">
+<div class="container">
         <div class="row">
             <?php include '../includes/sidebar.php'; ?>
+            <?php include '../includes/loader.php'; ?>
             <div class="col-md">
                 <div class="container">
                     <div class="dashboard-header d-flex justify-content-between align-items-center">
@@ -63,176 +64,226 @@
 
 
                     <div class="row">
-                        <!-- Offline Devices Table -->
-                        <div class="col-lg-6">
-                            <div class="card">
-                                <div class="card-header bg-dark text-white">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Offline Devices
-                                </div>
-                                <div class="card-body table-container">
-                                <table class="table table-hover" id="offlineTable">
-                                    <thead>
-                                        <tr>
-                                        <th>IP Address</th>
-                                        <th>Location</th>
-                                        <th>Category</th>
-                                        <th>Description</th>
-                                        <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php if(count($offlineDevices) > 0): ?>
-                                        <?php foreach($offlineDevices as $device): ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($device['ip_address']) ?></td>
-                                            <td><?= htmlspecialchars($device['location']) ?></td>
-                                            <td><?= htmlspecialchars($device['category']) ?></td>
-                                            <td><?= htmlspecialchars($device['description']) ?></td>
-                                            <td><span class="badge bg-danger badge-sm">Offline</span></td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </tbody>
-                                    </table>
-
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- High Latency Devices Table -->
-                        <div class="col-lg-6">
-                            <div class="card">
-                                <div class="card-header bg-dark text-white">
-                                    <i class="bi bi-speedometer me-2"></i> Latency Overview
-                                </div>
-                                <div class="card-body table-container">
-                                    <table class="table table-hover" id="latencyTable">
+                            <!-- Offline Devices Table -->
+                            <div class="col-lg-6">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Offline Devices
+                                    </div>
+                                    <div class="card-body table-container">
+                                    <table class="table table-hover" id="offlineTable">
                                         <thead>
                                             <tr>
-                                                <th>IP Address</th>
-                                                <th>Location</th>
-                                                <th>Category</th>
-                                                <th>Description</th>
-                                                <th>Latency</th>
+                                            <th>IP Address</th>
+                                            <th>Location</th>
+                                            <th>Category</th>
+                                            <th>Description</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php 
-                                            $devices = getHighLatencyDevices($conn);
-                                            if (count($devices) > 0):
-                                                foreach ($devices as $device):
-                                                    $isHigh     = $device['latency'] > 100;
-                                                    $rowClass   = $isHigh ? 'high-latency' : 'low-latency';
-                                                    $badgeClass = $isHigh ? 'bg-danger'    : 'bg-success';
-                                                    $status     = $isHigh ? 'High'         : 'Low';
-                                            ?>
-                                            <tr class="<?= $rowClass ?>">
-                                                <td><?= htmlspecialchars($device['ip_address'], ENT_QUOTES) ?></td>
-                                                <td><?= htmlspecialchars($device['location'],   ENT_QUOTES) ?></td>
-                                                <td><?= htmlspecialchars($device['category'],   ENT_QUOTES) ?></td>
-                                                <td><?= htmlspecialchars($device['description'],ENT_QUOTES) ?></td>
-                                                <td class="d-flex justify-content-between align-items-center">
-                                                    <span><?= htmlspecialchars($device['latency'], ENT_QUOTES) ?> ms</span>
-                                                    <span class="badge <?= $badgeClass ?> badge-sm">
-                                                        <?= $status ?>
-                                                    </span>
+                                            <?php if(count($offlineDevices) > 0): ?>
+                                            <?php foreach($offlineDevices as $device): ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($device['ip_address']) ?></td>
+                                                <td><?= htmlspecialchars($device['location']) ?></td>
+                                                <td><?= htmlspecialchars($device['category']) ?></td>
+                                                <td><?= htmlspecialchars($device['description']) ?></td>
+                                                <td><span class="badge bg-danger badge-sm">Offline</span></td>
+                                                <td>
+                                                    <a href="report.php?report=<?= $device['id'] ?>" class="btn btn-primary" style="font-size:0.55rem; padding:4rem 0.6rem; line-height:1;">View</a>
                                                 </td>
                                             </tr>
-                                            <?php 
-                                                endforeach;
-                                            ?>
-    
+                                            <?php endforeach; ?>
                                             <?php endif; ?>
                                         </tbody>
-                                    </table>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            
+
+                            <!-- High Latency Devices Table -->
+                            <div class="col-lg-6">
+                                <div class="card">
+                                    <div class="card-header bg-dark text-white">
+                                        <i class="bi bi-speedometer me-2"></i> Latency Overview
+                                    </div>
+                                    <div class="card-body table-container">
+                                        <table class="table table-hover" id="latencyTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>IP Address</th>
+                                                    <th>Location</th>
+                                                    <th>Category</th>
+                                                    <th>Description</th>
+                                                    <th>Latency</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php 
+                                                $devices = getHighLatencyDevices($conn);
+                                                if (count($devices) > 0):
+                                                    foreach ($devices as $device):
+                                                        $isHigh     = $device['latency'] > 100;
+                                                        $rowClass   = $isHigh ? 'high-latency' : 'low-latency';
+                                                        $badgeClass = $isHigh ? 'bg-danger'    : 'bg-success';
+                                                        $status     = $isHigh ? 'High'         : 'Low';
+                                                ?>
+                                                <tr class="<?= $rowClass ?>">
+                                                    <td><?= htmlspecialchars($device['ip_address'], ENT_QUOTES) ?></td>
+                                                    <td><?= htmlspecialchars($device['location'],   ENT_QUOTES) ?></td>
+                                                    <td><?= htmlspecialchars($device['category'],   ENT_QUOTES) ?></td>
+                                                    <td><?= htmlspecialchars($device['description'],ENT_QUOTES) ?></td>
+                                                    <td class="d-flex justify-content-between align-items-center">
+                                                        <span><?= htmlspecialchars($device['latency'], ENT_QUOTES) ?> ms</span>
+                                                        <span class="badge <?= $badgeClass ?> badge-sm">
+                                                            <?= $status ?>
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="report.php?report=<?= $device['id'] ?>" class="btn btn-primary" style="font-size:0.55rem; padding:.4rem 0.5rem; line-height:1;">View</a>
+                                                    </td>
+                                                </tr>
+                                                <?php 
+                                                    endforeach;
+                                                ?>
+
+                                                <?php endif; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
                         <!-- Chart Section - Add this after the Category Cards section -->
-                            <div class="row mt-4">
-                            <!-- LAN Latency Chart -->
-                            <div class="col-12 col-xl-6 mb-4">
-                                <div class="card">
-                                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                                    <div><i class="bi bi-ethernet me-2"></i> LAN Latency Trends</div>
-                                    <div class="filter-controls d-flex">
-                                    <select class="form-select form-select-sm me-2 lan-ip-filter">
-                                        <option value="">All IPs</option>
-                                    </select>
-                                    <select class="form-select form-select-sm me-2 lan-location-filter">
-                                        <option value="">All Locations</option>
-                                    </select>
-                                    <select class="form-select form-select-sm me-2 lan-month-filter">
-                                        <option value="1">January</option>
-                                        <option value="2">February</option>
-                                        <option value="3">March</option>
-                                        <option value="4">April</option>
-                                        <option value="5">May</option>
-                                        <option value="6">June</option>
-                                        <option value="7">July</option>
-                                        <option value="8">August</option>
-                                        <option value="9">September</option>
-                                        <option value="10">October</option>
-                                        <option value="11">November</option>
-                                        <option value="12">December</option>
-                                    </select>
-                                    <select class="form-select form-select-sm lan-year-filter">
-                                        <option value="2023">2023</option>
-                                        <option value="2024">2024</option>
-                                        <option value="2025">2025</option>
-                                    </select>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <div class="chart-container">
-                                    <canvas id="lanLatencyChart" style="width:100%; height:300px;"></canvas>
-                                    </div>
-                                </div>
-                                </div>
+                    <div class="row mt-4">
+                      <div class="col-12 col-xl-6 mb-4">
+                        <div class="card shadow">
+                          <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center py-3">
+                            <div class="fs-5 fw-bold"><i class="bi bi-ethernet me-2"></i> LAN Latency Trends</div>
+                            <button class="btn btn-sm btn-outline-light filter-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#lanFilters">
+                              <i class="bi bi-funnel me-1"></i>Filters
+                            </button>
+                          </div>
+                          
+                          <div id="lanFilters" class="collapse bg-light p-3 border-bottom">
+                            <div class="row g-2">
+                              <div class="col-md-3">
+                                <label class="form-label small mb-1">IP Address</label>
+                                <select class="form-select form-select-sm lan-ip-filter">
+                                  <option value="">All IPs</option>
+                                </select>
+                              </div>
+                              <div class="col-md-3">
+                                <label class="form-label small mb-1">Location</label>
+                                <select class="form-select form-select-sm lan-location-filter">
+                                  <option value="">All Locations</option>
+                                </select>
+                              </div>
+                              <div class="col-md-3">
+                                <label class="form-label small mb-1">Month</label>
+                                <select class="form-select form-select-sm lan-month-filter">
+                                  <option value="0">Full Year</option>
+                                  <option value="1">January</option>
+                                  <option value="2">February</option>
+                                  <option value="3">March</option>
+                                  <option value="4" selected>April</option>
+                                  <option value="5">May</option>
+                                  <option value="6">June</option>
+                                  <option value="7">July</option>
+                                  <option value="8">August</option>
+                                  <option value="9">September</option>
+                                  <option value="10">October</option>
+                                  <option value="11">November</option>
+                                  <option value="12">December</option>
+                                </select>
+                              </div>
+                              <div class="col-md-3">
+                                <label class="form-label small mb-1">Year</label>
+                                <select class="form-select form-select-sm lan-year-filter">
+                                  <option value="2023">2023</option>
+                                  <option value="2024">2024</option>
+                                  <option value="2025" selected>2025</option>
+                                </select>
+                              </div>
                             </div>
+                          </div>
+                          
+                          <div class="card-body p-0">
+                            <div class="chart-container p-3">
+                              <canvas id="lanLatencyChart" style="width:100%; height:250px;"></canvas>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-                            <!-- Internet Latency Chart -->
-                            <div class="col-12 col-xl-6 mb-4">
-                                <div class="card">
-                                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                                    <div><i class="bi bi-globe me-2"></i> Internet Latency Trends</div>
-                                    <div class="filter-controls d-flex">
-                                    <select class="form-select form-select-sm me-2 internet-ip-filter">
-                                        <option value="">All IPs</option>
-                                    </select>
-                                    <select class="form-select form-select-sm me-2 internet-location-filter">
-                                        <option value="">All Locations</option>
-                                    </select>
-                                    <select class="form-select form-select-sm me-2 internet-month-filter">
-                                        <option value="1">January</option>
-                                        <option value="2">February</option>
-                                        <option value="3">March</option>
-                                        <option value="4">April</option>
-                                        <option value="5">May</option>
-                                        <option value="6">June</option>
-                                        <option value="7">July</option>
-                                        <option value="8">August</option>
-                                        <option value="9">September</option>
-                                        <option value="10">October</option>
-                                        <option value="11">November</option>
-                                        <option value="12">December</option>
-                                    </select>
-                                    <select class="form-select form-select-sm internet-year-filter">
-                                        <option value="2023">2023</option>
-                                        <option value="2024">2024</option>
-                                        <option value="2025">2025</option>
-                                    </select>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <div class="chart-container">
-                                    <canvas id="internetLatencyChart" style="width:100%; height:300px;"></canvas>
-                                    </div>
-                                </div>
-                                </div>
+                      <!-- Internet Latency Chart -->
+                      <div class="col-12 col-xl-6 mb-4">
+                        <div class="card shadow">
+                          <div class="card-header bg-gradient-success text-white d-flex justify-content-between align-items-center py-3">
+                            <div class="fs-5 fw-bold"><i class="bi bi-globe me-2"></i> Internet Latency Trends</div>
+                            <button class="btn btn-sm btn-outline-light filter-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#internetFilters">
+                              <i class="bi bi-funnel me-1"></i>Filters
+                            </button>
+                          </div>
+                          
+                          <div id="internetFilters" class="collapse bg-light p-3 border-bottom">
+                            <div class="row g-2">
+                              <div class="col-md-3">
+                                <label class="form-label small mb-1">IP Address</label>
+                                <select class="form-select form-select-sm internet-ip-filter">
+                                  <option value="">All IPs</option>
+                                </select>
+                              </div>
+                              <div class="col-md-3">
+                                <label class="form-label small mb-1">Location</label>
+                                <select class="form-select form-select-sm internet-location-filter">
+                                  <option value="">All Locations</option>
+                                </select>
+                              </div>
+                              <div class="col-md-3">
+                                <label class="form-label small mb-1">Month</label>
+                                <select class="form-select form-select-sm internet-month-filter">
+                                  <option value="0">Full Year</option>
+                                  <option value="1">January</option>
+                                  <option value="2">February</option>
+                                  <option value="3">March</option>
+                                  <option value="4" selected>April</option>
+                                  <option value="5">May</option>
+                                  <option value="6">June</option>
+                                  <option value="7">July</option>
+                                  <option value="8">August</option>
+                                  <option value="9">September</option>
+                                  <option value="10">October</option>
+                                  <option value="11">November</option>
+                                  <option value="12">December</option>
+                                </select>
+                              </div>
+                              <div class="col-md-3">
+                                <label class="form-label small mb-1">Year</label>
+                                <select class="form-select form-select-sm internet-year-filter">
+                                  <option value="2023">2023</option>
+                                  <option value="2024">2024</option>
+                                  <option value="2025" selected>2025</option>
+                                </select>
+                              </div>
                             </div>
+                          </div>
+                          
+                          <div class="card-body p-0">
+                            <div class="chart-container p-3">
+                              <canvas id="internetLatencyChart" style="width:100%; height:250px;"></canvas>
                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                                         <!-- Category Cards -->
                     <div class="row">
                         <?php 
@@ -381,9 +432,351 @@
         </div>
     </div>
     
-   <script src="../js/dashboard.js"></script>
+<script>// Configuration
+const REFRESH_INTERVAL = 15 * 60 * 1000;
 
-   
+let refreshTimer;
+let progressInterval;
+let loaderTimeout;
+let offlineTable, latencyTable; // Store DataTable instances
+
+$(document).ready(function() {
+    // Initialize DataTables
+    offlineTable = $('#offlineTable').DataTable({
+        paging: true,
+        searching: true,
+        ordering: true,
+        info: true,
+        language: {
+            emptyTable: "No offline devices"
+        }
+    });
+    
+    latencyTable = $('#latencyTable').DataTable({
+        paging:    true,
+        searching: true,
+        ordering:  true,
+        info:      true,
+        
+        // Default sort by column 4 (Latency) descending:
+        order: [[4, 'desc']],        
+
+        // Let DataTables strip HTML and parse numbers in column 4:
+        columnDefs: [
+          { type: 'num-html', targets: 4 },
+          { orderable: false, targets: 5 }  // disable sort on the Action column
+        ],
+
+        language: {
+          emptyTable: "No latency data"
+        }
+      });
+
+    
+    // Start the auto-refresh timer and immediately fetch data
+    startRefreshTimer();
+    refreshData(false); // Initial data load without forcing ping
+    
+    // Listen for events from monitoring page
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'networkDataUpdated') {
+            refreshData(false); // Refresh without forcing ping
+        }
+    });
+    
+    // Manual refresh button
+    $('#refreshBtn').on('click', function() {
+        showLoader(); // Show loader right away
+        refreshData(true); // Force update
+    });
+    
+    // Initialize monthly statistics tables
+    var monthlyTable = $('#monthlyTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'excel',
+                text: 'Excel',
+                className: 'btn btn-success btn-sm d-none',
+                title: 'Monthly Network Statistics'
+            },
+            {
+                extend: 'pdf',
+                text: 'PDF',
+                className: 'btn btn-danger btn-sm d-none',
+                title: 'Monthly Network Statistics'
+            }
+        ],
+        paging: false,
+        searching: false,
+        info: false
+    });
+    
+    var detailedIPTable = $('#detailedIPTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'excel',
+                text: 'Excel',
+                className: 'btn btn-success btn-sm d-none',
+                title: 'Detailed IP Monthly Statistics'
+            },
+            {
+                extend: 'pdf',
+                text: 'PDF',
+                className: 'btn btn-danger btn-sm d-none',
+                title: 'Detailed IP Monthly Statistics'
+            }
+        ],
+        pageLength: 25
+    });
+    
+    // Export buttons functionality
+    $('#exportMonthlyExcel').click(function() {
+        monthlyTable.button('.buttons-excel').trigger();
+    });
+    
+    $('#exportMonthlyPDF').click(function() {
+        monthlyTable.button('.buttons-pdf').trigger();
+    });
+    
+    // Month form submission
+    $('#monthForm').on('submit', function(e) {
+        e.preventDefault();
+        let month = $('#monthSelect').val();
+        let year = $('#yearSelect').val();
+        window.location.href = 'dashboard.php?month=' + month + '&year=' + year;
+    });
+});
+
+function startRefreshTimer() {
+    console.log("Starting refresh timer for", REFRESH_INTERVAL/1000, "seconds");
+    clearTimeout(refreshTimer);
+    
+    refreshTimer = setTimeout(() => {
+        console.log("Timer expired, refreshing data");
+        showLoader(); // Show loader when auto-refreshing
+        refreshData(true); // Force ping on auto-refresh
+    }, REFRESH_INTERVAL);
+
+    // Update progress bar
+    const progressBar = document.querySelector('.progress-bar');
+    if (progressBar) {
+        progressBar.style.width = '0%';
+
+        clearInterval(progressInterval);
+        progressInterval = setInterval(() => {
+            const currentWidth = parseFloat(progressBar.style.width) || 0;
+            if (currentWidth < 100) {
+                const increment = 100 / (REFRESH_INTERVAL / 1000);
+                progressBar.style.width = (currentWidth + increment) + '%';
+            }
+        }, 1000);
+    }
+}
+
+function refreshData(forceUpdate = false) {
+    console.log("Refreshing data, force =", forceUpdate);
+    
+    const url = forceUpdate ? '?refresh=true&force=true' : '?refresh=true';
+    
+    $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json',
+        success(data) {
+            console.log("Data refreshed successfully");
+            updateDashboard(data);
+            $('#lastUpdated').text('Last updated: ' + data.timestamp);
+            startRefreshTimer(); // Reset the timer after successful refresh
+            
+            // short delay so the UI updates are visible under the loader
+            setTimeout(() => {
+                hideLoader();
+                
+                if (data.newlyOfflineDevices?.length) {
+                    showOfflineAlert(data.newlyOfflineDevices);
+                }
+            }, 500);
+            
+            // broadcast to other tabs
+            localStorage.setItem('networkDataUpdated', Date.now());
+        },
+        error(xhr, status, error) {
+            console.error('Error refreshing data:', error);
+            
+            // Clear and update tables on error
+            offlineTable.clear().draw();
+            latencyTable.clear().draw();
+            
+            startRefreshTimer();
+            hideLoader();
+        }
+    });
+}
+
+function showOfflineAlert(offlineDevices) {
+    // Create alert content with device list
+    let alertContent = '<div class="offline-alert-content">';
+    alertContent += '<ul style="text-align: left; padding-left: 20px;">';
+    
+    offlineDevices.forEach(device => {
+        alertContent += `<li><strong>${device.ip_address}</strong> - ${device.location} (${device.category})</li>`;
+    });
+    
+    alertContent += '</ul></div>';
+    
+    // Show SweetAlert2
+    Swal.fire({
+        title: 'Network Alert!',
+        html: `<div>The following ${offlineDevices.length > 1 ? 'devices are' : 'device is'} now offline:</div>` + alertContent,
+        icon: 'error',
+        confirmButtonText: 'Acknowledge',
+        confirmButtonColor: '#dc3545',
+        showCloseButton: true,
+        customClass: {
+            popup: 'offline-alert-popup',
+            title: 'offline-alert-title'
+        }
+    });
+    
+    // Add some CSS to ensure the alert is prominent
+    const style = document.createElement('style');
+    style.textContent = `
+        .offline-alert-popup {
+            border-left: 5px solid #dc3545;
+        }
+        .offline-alert-title {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .offline-alert-content {
+            margin-top: 15px;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+function updateDashboard(data) {
+    // Update summary counters
+    animateCounter($('.card-value.total'), data.summary.total);
+    animateCounter($('.card-value.online'), data.summary.online);
+    animateCounter($('.card-value.offline'), data.summary.offline);
+  
+    // Update category cards
+    for (const [category, stats] of Object.entries(data.categories)) {
+        const card = $(`.category-card .card-header:contains("${category}")`).closest('.category-card');
+        if (!card.length) continue;
+        
+        card.find('.d-flex:contains("Total IPs") .fw-bold').text(stats.total);
+        card.find('.d-flex:contains("Online") .online').text(stats.online);
+        card.find('.d-flex:contains("Offline") .offline').text(stats.offline);
+        card.find('.d-flex:contains("Avg Latency") .fw-bold').text(stats.avg_latency + ' ms');
+    }
+  }
+  
+    // Update offline devices table using DataTables API
+    offlineTable.clear();
+      if (data.offlineDevices && data.offlineDevices.length) {
+        data.offlineDevices.forEach(d => {
+          offlineTable.row.add([
+            d.ip_address,
+            d.location || 'Unknown',
+            d.category || 'Unknown',
+            d.description || 'No description',
+            '<span class="badge bg-danger badge-sm">Offline</span>',
+            // ← Action column
+            `<a href="report.php?report=${encodeURIComponent(d.id)}"
+                class="btn btn-primary btn-sm">View</a>`
+          ]);
+        });
+      }
+      offlineTable.draw();
+
+  
+    // Update latency table using DataTables API
+    latencyTable.clear();
+      if (data.highLatencyDevices && data.highLatencyDevices.length) {
+        data.highLatencyDevices.forEach(d => {
+          const isHigh = parseFloat(d.latency) > 100;
+          const badgeClass = isHigh ? 'bg-danger' : 'bg-success';
+          const status     = isHigh ? 'High'      : 'Low';
+
+          // add row, now with 6th "Action" column
+          const rowNode = latencyTable.row.add([
+            d.ip_address,
+            d.location || 'Unknown',
+            d.category || 'Unknown',
+            d.description || 'No description',
+            `<div class="d-flex justify-content-between align-items-center">
+              <span>${d.latency} ms</span>
+              <span class="badge ${badgeClass} badge-sm">${status}</span>
+            </div>`,
+            `<a href="report.php?report=${encodeURIComponent(d.id)}"
+                class="btn btn-primary btn-sm">View</a>`
+          ]).draw(false).node();
+
+          // reapply your row classes if needed
+          $(rowNode).addClass(isHigh ? 'high-latency' : 'low-latency');
+        });
+      }
+      latencyTable.draw();
+
+
+// Animate counter for smoother transitions
+function animateCounter(element, targetValue) {
+    const $element = $(element);
+    const startValue = parseInt($element.text()) || 0;
+    const duration = 1000; // 1 second
+    const frameRate = 60;
+    const increment = (targetValue - startValue) / (duration / (1000 / frameRate));
+    
+    let currentValue = startValue;
+    const counter = setInterval(() => {
+        currentValue += increment;
+        if ((increment > 0 && currentValue >= targetValue) || 
+            (increment < 0 && currentValue <= targetValue)) {
+            clearInterval(counter);
+            $element.text(targetValue);
+        } else {
+            $element.text(Math.round(currentValue));
+        }
+    }, 1000 / frameRate);
+}
+
+let loaderTimer, loaderStart;
+function showLoader() {
+    console.log("Showing loader");
+    clearTimeout(loaderTimeout);
+    loaderStart = Date.now();
+    document.getElementById('loader').classList.remove('d-none');
+    clearInterval(loaderTimer);
+    loaderTimer = setInterval(() => {
+        const s = Math.floor((Date.now() - loaderStart) / 1000);
+        document.getElementById('loader-text').textContent = `Loading… ${s}s`;
+    }, 500);
+    loaderTimeout = setTimeout(() => {
+        hideLoader();
+        console.error('Loading timeout occurred');
+        Swal.fire({
+            title: 'Loading Error',
+            text: 'The operation timed out. Please try again later.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    }, 60000);
+}
+
+function hideLoader(reloadPage = false) {
+    console.log("Hiding loader");
+    clearInterval(loaderTimer);
+    clearTimeout(loaderTimeout);
+    document.getElementById('loader-text').textContent = 'Loading… 0s';
+    document.getElementById('loader').classList.add('d-none');
+    if (reloadPage) {
+        window.location.reload();
+    }
+}</script>
 
 <!-- DataTables + Buttons init -->
 <script>
@@ -878,6 +1271,26 @@ $(document).ready(function() {
   $('#refreshBtn').on('click', function() {
     fetchLatencyData('lan');
     fetchLatencyData('internet');
+  });
+});
+</script>
+
+<script>
+// Initialize Bootstrap tooltips
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize tooltips
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  });
+  
+  // Make the charts responsive to filter collapse/expand
+  document.querySelectorAll('.filter-toggle').forEach(function(button) {
+    button.addEventListener('click', function() {
+      setTimeout(function() {
+        window.dispatchEvent(new Event('resize'));
+      }, 350);
+    });
   });
 });
 </script>

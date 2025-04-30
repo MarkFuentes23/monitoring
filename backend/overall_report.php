@@ -2,12 +2,30 @@
 require_once '../config/db.php';
 requireLogin();
 
-/**
- * Get global monitoring data across all devices with filters
- * 
- * @param array $filters Array containing filter parameters
- * @return array All monitoring data with filters applied
- */
+// First get month and year separately to avoid circular reference
+$currentMonth = isset($_GET['month']) ? (int)$_GET['month'] : date('n');
+$currentYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+
+// Get filter parameters from URL
+$filters = [
+    'month' => $currentMonth,
+    'year' => $currentYear,
+    'view_mode' => isset($_GET['view_mode']) ? $_GET['view_mode'] : 'custom',
+    'start_date' => isset($_GET['start_date']) ? $_GET['start_date'] : '01',
+    'end_date' => isset($_GET['end_date']) ? $_GET['end_date'] : date('t', mktime(0,0,0,$currentMonth,1,$currentYear)),
+    'single_day' => isset($_GET['single_day']) ? $_GET['single_day'] : date('d'),
+    'start_time' => isset($_GET['start_time']) ? $_GET['start_time'] : '00:00',
+    'end_time' => isset($_GET['end_time']) ? $_GET['end_time'] : '23:59',
+    'location' => isset($_GET['location']) ? $_GET['location'] : '',
+    'category' => isset($_GET['category']) ? $_GET['category'] : '',
+    'status' => isset($_GET['status']) ? $_GET['status'] : '',
+    'ip_id' => isset($_GET['ip_id']) ? $_GET['ip_id'] : '',
+    // Add weekday filters
+    'weekdays' => isset($_GET['weekdays']) ? $_GET['weekdays'] : ['1','2','3','4','5','6'] // Default Mon-Sat
+];
+
+// Then modify the getGlobalMonitoringData function in overall_report.php to include weekday filtering:
+
 function getGlobalMonitoringData($filters = []) {
     global $conn;
     
@@ -23,6 +41,9 @@ function getGlobalMonitoringData($filters = []) {
     $location = $filters['location'] ?? '';
     $category = $filters['category'] ?? '';
     $status = $filters['status'] ?? '';
+    $weekdays = $filters['weekdays'] ?? ['1','2','3','4','5','6']; // Default Mon-Sat
+
+    
     
     // Build base query
     $whereClause = "WHERE YEAR(p.created_at) = ? AND MONTH(p.created_at) = ?";
@@ -53,9 +74,11 @@ function getGlobalMonitoringData($filters = []) {
             break;
     }
     
-    // Add weekday filter for business days (Monday-Saturday)
-    if ($viewMode !== 'day') {
-        $whereClause .= " AND WEEKDAY(p.created_at) < 6";
+    // Add weekday filter based on selected weekdays (1=Monday, 7=Sunday in MySQL)
+    if (!empty($weekdays)) {
+        $placeholders = implode(',', array_fill(0, count($weekdays), '?'));
+        $whereClause .= " AND WEEKDAY(p.created_at) IN ($placeholders)";
+        $params = array_merge($params, $weekdays);
     }
     
     // Add location filter
@@ -74,6 +97,12 @@ function getGlobalMonitoringData($filters = []) {
     if (!empty($status)) {
         $whereClause .= " AND p.status = ?";
         $params[] = $status;
+    }
+    
+    // Add specific device filter
+    if (!empty($filters['ip_id'])) {
+        $whereClause .= " AND p.ip_id = ?";
+        $params[] = $filters['ip_id'];
     }
     
     // Execute query to get detailed logs with applied filters
@@ -110,37 +139,36 @@ function getGlobalMonitoringData($filters = []) {
             'end_time' => $endTime,
             'location' => $location,
             'category' => $category,
-            'status' => $status
+            'status' => $status,
+            'weekdays' => $weekdays
         ]
     ];
 }
 
-/**
- * Get available filters options (locations, categories)
- * 
- * @return array All filter options
- */
-function getFilterOptions() {
-    global $conn;
-    
-    // Get all locations
-    $stmt = $conn->prepare("SELECT DISTINCT location FROM add_ip ORDER BY location");
-    $stmt->execute();
-    $locations = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    
-    // Get all categories
-    $stmt = $conn->prepare("SELECT DISTINCT category FROM add_ip ORDER BY category");
-    $stmt->execute();
-    $categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    
-    // Get all IPs
-    $stmt = $conn->prepare("SELECT id, ip_address, description FROM add_ip ORDER BY ip_address");
-    $stmt->execute();
-    $ips = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    return [
-        'locations' => $locations,
-        'categories' => $categories,
-        'ips' => $ips
-    ];
+$whereClauses = [];
+$params       = [];  
+
+// 2) build the same filters you use elsewhere
+if (!empty($filters['location'])) {
+    $whereClauses[]      = 'location = :location';
+    $params[':location'] = $filters['location'];
 }
+if (!empty($filters['category'])) {
+    $whereClauses[]       = 'category = :category';
+    $params[':category']  = $filters['category'];
+}
+if (!empty($filters['ip_id'])) {
+    $whereClauses[]    = 'id = :ip_id';
+    $params[':ip_id']  = $filters['ip_id'];
+}
+
+// 3) assemble WHERE
+$whereSQL = $whereClauses 
+          ? 'WHERE ' . implode(' AND ', $whereClauses) 
+          : '';
+
+// 4) run the COUNT(*) query
+$sql  = "SELECT COUNT(*) FROM add_ip $whereSQL";
+$stmt = $conn->prepare($sql);
+$stmt->execute($params);
+$totalDevices = (int) $stmt->fetchColumn();

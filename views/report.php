@@ -87,10 +87,6 @@ $metrics = getMonthlyAverageData($device_data['id'], $selectedMonth, $selectedYe
                     </div>
                   </td>
                 </tr>
-                <tr>
-                  <th class="table-secondary">Added Date:</th>
-                  <td><?= date("F j, Y", strtotime($device_data['date'])) ?></td>
-                </tr>
               </table>
             </div>
             
@@ -118,14 +114,21 @@ $metrics = getMonthlyAverageData($device_data['id'], $selectedMonth, $selectedYe
                   </div>
 
                   <div class="col-6">
-                    <div class="card text-center shadow-sm border-0" style="background: linear-gradient(45deg, #e74a3b, #ef8579); border-radius: 10px; max-height: 120px;">
-                      <div class="card-body p-2">
-                        <i class="fas fa-clock mb-1" style="color: #ffffff; font-size: 1.2rem;"></i>
-                        <small class="d-block text-white">Downtime Hours</small>
-                        <h5 class="text-white mb-0"><?= htmlspecialchars($metrics['downtime_hours']) ?> h</h5>
-                      </div>
+                  <div class="card text-center shadow-sm border-0" style="background: linear-gradient(45deg, #e74a3b, #ef8579); border-radius: 10px; max-height: 120px;">
+                    <div class="card-body p-2">
+                      <i class="fas fa-clock mb-1" style="color: #ffffff; font-size: 1.2rem;"></i>
+                      <small class="d-block text-white">Downtime</small>
+                      <h5 class="text-white mb-0">
+                        <?php 
+                          $minutes = $metrics['downtime_minutes'];
+                          $hours = floor($minutes / 60);
+                          $remaining_minutes = $minutes % 60;
+                          echo htmlspecialchars("$hours h $remaining_minutes m"); 
+                        ?>
+                      </h5>
                     </div>
                   </div>
+                </div>
 
                   <div class="col-6">
                     <div class="card text-center shadow-sm border-0" style="background: linear-gradient(45deg, #f6c23e, #f9d675); border-radius: 10px; max-height: 120px;">

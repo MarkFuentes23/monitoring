@@ -79,7 +79,8 @@ function getCategoryStats($conn) {
 function getOfflineDevices($conn) {
     try {
         $query = "
-            SELECT ip_address,
+           SELECT id,
+                    ip_address,
                    location,
                    category,
                    description,
@@ -102,7 +103,7 @@ function getOfflineDevices($conn) {
 function getHighLatencyDevices($conn) {
     try {
         // Kukunin na ngayon lahat ng online devices at isa-sort by latency DESC
-        $query = "SELECT ip_address, location, category, description, latency 
+        $query = "SELECT id,ip_address, location, category, description, latency 
                   FROM add_ip 
                   WHERE status = 'online'
                   ORDER BY latency DESC";

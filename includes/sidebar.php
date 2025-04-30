@@ -1,54 +1,63 @@
-<!-- HTML for the sidebar -->
 <div class="sidebar col-md-3 col-lg-2 d-md-block" id="sidebar">
     <div class="sidebar-header">
         <div class="logo-container">
-            <span class="logo-text">BCI</span>
+            <img src="../logo.png" alt="BCI Logo" class="logo-image">
         </div>
-        <button id="sidebarToggle" class="btn btn-link">
-            <i class="fas fa-bars"></i>
+        <button id="sidebarToggle" class="btn btn-link toggle-btn">
+        <i class="fas fa-bars burger-icon"></i>
         </button>
     </div>
     <div class="position-sticky">
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'dashboard.php') ? 'active' : ''; ?>" href="dashboard.php">
-                    <i class="fas fa-tachometer-alt"></i> <span class="menu-text">Dashboard</span>
+                    <i class="fas fa-home-alt"></i> <span class="menu-text">Dashboard</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'monitoring.php') ? 'active' : ''; ?>" href="/views/monitoring.php">
-                    <i class="fas fa-network-wired"></i> <span class="menu-text">Monitoring</span>
+                    <i class="fas fa-chart-line"></i> <span class="menu-text">Monitoring</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'overall_report.php') ? 'active' : ''; ?>" href="/views/overall_report.php">
-                    <i class="fas fa-chart-bar"></i> <span class="menu-text">Reports</span>
+                <i class="fas fa-chart-bar menu-icon"></i></i> <span class="menu-text">Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'overall_report.php') ? 'active' : ''; ?>" href="/register.php">
+                <i class="fas fa-user menu-icon"></i></i> <span class="menu-text">User Management</span>
                 </a>
             </li>
             <li class="nav-item logout-item">
                 <a class="nav-link" href="../logout.php">
-                    <i class="fas fa-sign-out-alt"></i> <span class="menu-text">Logout</span>
+                    <i class="fas fa-arrow-right-from-bracket"></i> <span class="menu-text">Logout</span>
                 </a>
             </li>
         </ul>
     </div>
+    <div class="sidebar-footer">
+        <p>© 2025 BCI System</p>
+    </div>
 </div>
 
-<!-- CSS for the sidebar -->
+<!-- CSS for the improved sidebar -->
 <style>
 /* Sidebar Styles */
 .sidebar {
-    background: linear-gradient(to bottom, #ffffff 30%, #60a5fa 100%);
+    background: linear-gradient(145deg, #ffffff 20%, #3b82f6 130%);
     color: #1e293b;
     min-height: 100vh;
-    transition: all 0.3s ease;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
     padding: 0;
     z-index: 100;
-    width: 250px;
+    width: 260px;
     position: fixed;
     top: 0;
     left: 0;
+    border-right: 3px solid #fbbf24;
+    overflow-x: hidden;
 }
 
 /* Header */
@@ -57,54 +66,71 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 2px solid rgba(251, 191, 36, 0.5);
+    overflow: hidden;
 }
 
 .logo-container {
     display: flex;
     align-items: center;
+    transition: all 0.3s ease;
 }
 
-.logo-text {
-    color: #3b82f6;
-    font-weight: 700;
-    font-size: 22px;
-    letter-spacing: 1px;
-    text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+.logo-image {
+    max-width: 150px;
+    height: auto;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.4));
 }
 
-/* Burger toggle button with left margin */
-.sidebar-header button {
-    color: #374151; /* Tailwind gray-700 */
+
+/* Toggle button */
+.toggle-btn {
+    color: #1e40af;
     border: none;
     background: transparent;
-    transition: all 0.3s;
-    width: 36px;
-    height: 36px;
+    transition: all 0.4s;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 12px;  /* added left margin */
+    border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
-.sidebar-header button:hover {
-    background-color: rgba(255,255,255,0.1);
-    color: #3b82f6;
-    transform: rotate(180deg);
+.toggle-btn:hover {
+    background-color: rgba(251, 191, 36, 0.2);
+    color: #1e40af;
+    transform: scale(1.1);
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
 }
 
 /* Navigation links */
 .sidebar .nav-link {
-    color: #1e293b !important;    /* dark bluish-gray for contrast */
+    color: #1e293b !important;
     padding: 14px 20px;
     border-left: 4px solid transparent;
-    transition: all 0.3s;
+    transition: all 0.3s ease-out;
     font-size: 15px;
     display: flex;
     align-items: center;
-    margin: 4px 8px;
-    border-radius: 8px;
+    margin: 8px 12px;
+    border-radius: 10px;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar .nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.1), transparent);
+    transition: all 0.5s ease;
 }
 
 .sidebar .nav-link i {
@@ -112,27 +138,28 @@
     width: 22px;
     text-align: center;
     font-size: 16px;
-    color: #1e293b !important;
+    color: #1e40af !important;
     transition: all 0.3s;
 }
 
 /* Hover & active states */
 .sidebar .nav-link:hover,
 .sidebar .nav-link.active {
-    background-color: rgba(255,255,255,0.2);
-    border-left: 4px solid #3b82f6;
-    color: #3b82f6 !important;
+    background-color: rgba(255,255,255,0.8);
+    border-left: 4px solid #fbbf24;
+    color: #1e40af !important;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+    transform: translateX(5px);
+}
+
+.sidebar .nav-link:hover::before {
+    left: 100%;
 }
 
 .sidebar .nav-link:hover i,
 .sidebar .nav-link.active i {
-    color:rgb(0, 191, 255) !important;
-}
-
-/* Icon for Monitoring menu item */
-.menu-item.monitoring .menu-link i {
-    /* e.g. chart-line icon */
-    color: #1e293b;
+    color: #fbbf24 !important;
+    transform: scale(1.2);
 }
 
 /* Sidebar footer */
@@ -141,9 +168,11 @@
     bottom: 15px;
     width: 100%;
     text-align: center;
-    color: #475569;
+    color: #1e293b;
     font-size: 12px;
     padding: 10px;
+    border-top: 1px solid rgba(251, 191, 36, 0.3);
+    transition: all 0.3s ease;
 }
 
 /* Logout link */
@@ -154,10 +183,13 @@
 .logout-item .nav-link {
     color: #ef4444;
     opacity: 0.8;
+    border-top: 1px solid rgba(251, 191, 36, 0.2);
+    padding-top: 20px;
 }
 
 .logout-item .nav-link:hover {
     opacity: 1;
+    background-color: rgba(239, 68, 68, 0.1);
 }
 
 .logout-item .nav-link i {
@@ -172,13 +204,25 @@
 .sidebar.collapsed .logo-text,
 .sidebar.collapsed .menu-text,
 .sidebar.collapsed .sidebar-footer {
-    display: none;
+    opacity: 0;
+    visibility: hidden;
+    width: 0;
+}
+
+.sidebar.collapsed .logo-image {
+    max-width: 40px;
+    margin: 0 auto;
+}
+
+.sidebar.collapsed .logo-container {
+    justify-content: center;
+    width: 100%;
 }
 
 .sidebar.collapsed .nav-link {
     padding: 14px 0;
     justify-content: center;
-    margin: 4px auto;
+    margin: 8px auto;
     width: 90%;
 }
 
@@ -193,15 +237,19 @@
 }
 
 .sidebar.collapsed .logout-item {
-    margin-top: 20px;
+    margin-top: 30px;
+}
+
+.sidebar.collapsed .toggle-btn i {
+    transform: rotate(180deg);
 }
 
 /* Main content shift */
 .content-wrapper {
-    margin-left: 250px;
-    transition: all 0.3s ease;
+    margin-left: 260px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     padding: 15px;
-    width: calc(100% - 250px);
+    width: calc(100% - 260px);
 }
 
 .content-wrapper.expanded {
@@ -242,7 +290,7 @@
     .sidebar .nav-link:hover,
     .sidebar .nav-link.active {
         border-left: none;
-        border-bottom: 3px solid #3b82f6;
+        border-bottom: 3px solid #fbbf24;
     }
     .sidebar-footer {
         display: none;
@@ -289,7 +337,7 @@
 </style>
 
 
-<!-- JavaScript for the sidebar toggle functionality -->
+<!-- JavaScript for the sidebar toggle functionality remains unchanged -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebar');
