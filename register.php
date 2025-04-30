@@ -1,11 +1,6 @@
 <?php
 include 'db.php';
-
-// Check if user is logged in
-if (!isLoggedIn()) {
-    header("Location: ../login.php");
-    exit;
-}
+session_start();
 
 // Get all users
 $query = "SELECT id, username, email, created_at FROM users";
@@ -30,13 +25,13 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
 }
 ?>
 
-<?php include '../includes/header.php'; ?>
+<?php include 'includes/header.php'; ?>
 <link rel="stylesheet" href="../css/dashboard.css">
 
 <div class="container-fluid">
     <div class="row">
-        <?php include '../includes/sidebar.php'; ?>
-        <?php include '../includes/loader.php'; ?>
+        <?php include 'includes/sidebar.php'; ?>
+        <?php include 'includes/loader.php'; ?>
         
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
