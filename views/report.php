@@ -168,6 +168,7 @@ $metrics = getMonthlyAverageData($device_data['id'], $selectedMonth, $selectedYe
 
 
       <!-- Monthly Average Latency -->
+ <!-- Monthly Average Latency (Working Hours Only: 8am - 6pm) -->
       <?php 
         // Get monthly data from the backend function
         $monthlyData = getMonthlyAverageData($report_id, $selectedMonth, $selectedYear);
@@ -176,7 +177,7 @@ $metrics = getMonthlyAverageData($device_data['id'], $selectedMonth, $selectedYe
       ?>
       <div class="card mb-4 shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="card-title mb-0">Monthly Average Latency (<?= date("F Y", mktime(0,0,0,$selectedMonth,1,$selectedYear)) ?>)</h5>
+          <h5 class="card-title mb-0">Monthly Average Latency - Working Hours (8am-6pm) (<?= date("F Y", mktime(0,0,0,$selectedMonth,1,$selectedYear)) ?>)</h5>
           <div id="monthlyExportButtons"></div>
         </div>
         <div class="card-body">

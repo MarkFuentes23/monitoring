@@ -3,6 +3,12 @@
 require_once '../config/db.php';
 requireLogin();
 
+// Get the user's role from the session - FIXED: Get role properly from session
+$userRole = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'employee';
+
+// Log the role for debugging
+error_log("User role from session: " . $userRole);
+
 // initial load of table data WITHOUT pinging
 $dataRows = $conn
   ->query("SELECT * FROM add_ip ORDER BY date DESC")
@@ -47,8 +53,9 @@ if (!isset($categoryData['Uncategorized'])) {
       <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Monitoring</h1>
         <div class="btn-toolbar mb-2 mb-md-0 align-items-center">
-
-          <!-- Add / Refresh -->
+          
+          <?php if ($userRole == 'admin'): ?>
+          <!-- Add / Refresh - Only visible to admins -->
           <div class="btn-group me-2">
             <button class="btn btn-sm btn-outline-secondary"
                     data-bs-toggle="modal"
@@ -66,7 +73,7 @@ if (!isset($categoryData['Uncategorized'])) {
             </button>
           </div>
 
-          <!-- Schedule Resume at Specific Time (with seconds) -->
+          <!-- Schedule Resume at Specific Time (with seconds) - Only visible to admins -->
           <div class="input-group input-group-sm me-2" style="width:180px">
             <input type="time"
                    id="resumeTime"
@@ -78,6 +85,7 @@ if (!isset($categoryData['Uncategorized'])) {
               Set Resume
             </button>
           </div>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -91,6 +99,11 @@ if (!isset($categoryData['Uncategorized'])) {
           <?= $_SESSION['success']; unset($_SESSION['success']); ?>
         </div>
       <?php endif; ?>
+
+      <!-- Debug info - remove in production -->
+      <div class="alert alert-info py-1">
+        Current role: <?= htmlspecialchars($userRole) ?>
+      </div>
 
       <!-- Dynamic category tables using row/col system -->
       <div class="row">
@@ -157,18 +170,21 @@ if (!isset($categoryData['Uncategorized'])) {
                             </span>
                           </td>
                           <td>
-                            <!-- Report button -->
-                            <a href="report.php?report=<?= $row['id'] ?>" class="btn btn-sm btn-success btn-xs" onclick="event.stopPropagation()"><i class="fas fa-file-alt me-1"></i>                            </a>
-                            <!-- Update button -->
-                            <button  type="button" class="btn btn-sm btn-primary btn-xs btn-update" data-id="<?= $row['id'] ?>" data-ip="<?= htmlspecialchars($row['ip_address']) ?>"
+                            <!-- Report button (visible to everyone) -->
+                            <a href="report.php?report=<?= $row['id'] ?>" class="btn btn-sm btn-success btn-xs" onclick="event.stopPropagation()"><i class="fas fa-file-alt me-1"></i></a>
+                            
+                            <?php if ($userRole == 'admin'): ?>
+                            <!-- Update button (admin only) -->
+                            <button type="button" class="btn btn-sm btn-primary btn-xs btn-update" data-id="<?= $row['id'] ?>" data-ip="<?= htmlspecialchars($row['ip_address']) ?>"
                             data-desc="<?= htmlspecialchars($row['description']) ?>" data-loc="<?= htmlspecialchars($row['location']) ?>" data-cat="<?= htmlspecialchars($row['category']) ?>" onclick="event.stopPropagation()" data-bs-toggle="modal" data-bs-target="#updateModal"> <i class="fas fa-edit me-1"></i>
                             </button>
 
-                            <!-- Delete button -->
+                            <!-- Delete button (admin only) -->
                             <form method="post" action="../backend/process.php" class="delete-form" style="display: inline;">
                             <input type="hidden" name="action" value="delete_data"> <input type="hidden" name="id" value="<?= $row['id'] ?>">
                             <button type="button" class="btn btn-sm btn-danger btn-xs btn-delete" onclick="event.stopPropagation()"> <i class="fas fa-trash-alt me-1"></i> </button>
                             </form>
+                            <?php endif; ?>
                           </td>
                         </tr>
                         <?php endforeach; ?>
@@ -190,8 +206,8 @@ if (!isset($categoryData['Uncategorized'])) {
         <?php endif; ?>
       </div>
 
-
-      <!-- Add Data Modal -->
+      <?php if ($userRole == 'admin'): ?>
+      <!-- Add Data Modal - Only for admins -->
       <div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <form action="../backend/process.php" method="POST" class="modal-content">
@@ -248,7 +264,7 @@ if (!isset($categoryData['Uncategorized'])) {
       </div>
     </div>
 
-      <!-- Update Data Modal -->
+      <!-- Update Data Modal - Only for admins -->
         <div class="modal fade" id="updateModal" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog">
             <form action="../backend/monitoring_update.php" method="POST" class="modal-content">
@@ -295,7 +311,7 @@ if (!isset($categoryData['Uncategorized'])) {
         </div>
 
 
-      <!-- Add Location & Category Modal -->
+      <!-- Add Location & Category Modal - Only for admins -->
       <div class="modal fade" id="addLocationCategoryModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
           <form action="../backend/process.php" method="POST" class="modal-content">
@@ -322,6 +338,8 @@ if (!isset($categoryData['Uncategorized'])) {
             </div>
           </form>
         </div>
+      </div>
+      <?php endif; ?>
 
     </main>
   </div>

@@ -38,16 +38,19 @@ function getMonthlyAverageData($report_id, $selectedMonth, $selectedYear) {
     }
     unset($day);
 
-    // 2) Fetch all pings for offline detection
+    // 2) Fetch all pings ONLY DURING BUSINESS HOURS for offline detection
     $stmt2 = $conn->prepare("
         SELECT 
             created_at,
             status
         FROM ping_logs
-        WHERE ip_id = ? AND YEAR(created_at) = ? AND MONTH(created_at) = ?
+        WHERE ip_id = ? 
+          AND YEAR(created_at) = ? 
+          AND MONTH(created_at) = ?
+          AND TIME(created_at) BETWEEN ? AND ?
         ORDER BY created_at
     ");
-    $stmt2->execute([$report_id, $selectedYear, $selectedMonth]);
+    $stmt2->execute([$report_id, $selectedYear, $selectedMonth, $businessStart, $businessEnd]);
     $all_pings = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
     // 3) Process all pings to detect continuous offline periods
@@ -117,17 +120,16 @@ function getMonthlyAverageData($report_id, $selectedMonth, $selectedYear) {
         'avg_uptime_percent' => 100 - (($total_offline_periods / ($total_days * $intervalsPerDay)) * 100),
     ];
 
+    $downtime_minutes = $total_offline_periods * 45; // Each offline period is 45 minutes
+    $uptime_percent = $monthly_total['avg_uptime_percent'];
 
-            $downtime_minutes = $total_offline_periods * 45; // Each offline period is 45 minutes
-            $uptime_percent = $monthly_total['avg_uptime_percent'];
-
-            return [
-                'monthly_stats' => $monthly_stats,
-                'monthly_total' => $monthly_total,
-                'downtime_minutes' => $downtime_minutes,
-                'uptime_percent' => $uptime_percent,
-                'total_offline_periods' => $total_offline_periods,
-                'avg_latency' => $monthly_total['avg_latency'],
-                'days_running' => $total_days
-            ];
+    return [
+        'monthly_stats' => $monthly_stats,
+        'monthly_total' => $monthly_total,
+        'downtime_minutes' => $downtime_minutes,
+        'uptime_percent' => $uptime_percent,
+        'total_offline_periods' => $total_offline_periods,
+        'avg_latency' => $monthly_total['avg_latency'],
+        'days_running' => $total_days
+    ];
 }

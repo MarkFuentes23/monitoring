@@ -16,7 +16,8 @@ function loginUser($username, $password) {
     }
 
     try {
-        $sql  = "SELECT id, username, password FROM users WHERE username = :username";
+        // Add role to the SELECT statement
+        $sql  = "SELECT id, username, password, role FROM users WHERE username = :username";
         $stmt = $conn->prepare($sql);
         $stmt->execute([':username' => $username]);
 
@@ -25,6 +26,7 @@ function loginUser($username, $password) {
             if (password_verify($password, $user['password'])) {
                 $_SESSION['user_id']  = $user['id'];
                 $_SESSION['username'] = $user['username'];
+                $_SESSION['user_role'] = $user['role']; // Add this line to store role
                 $response['success']  = true;
             } else {
                 $response['message'] = "Invalid username or password";
@@ -39,57 +41,6 @@ function loginUser($username, $password) {
     return $response;
 }
 
-function registerUser($username, $email, $password, $confirm_password) {
-    global $conn;
-    $response = ['success' => false, 'message' => ''];
-
-    if (empty($username) || empty($email) || empty($password)) {
-        $response['message'] = "Please fill all required fields";
-        return $response;
-    }
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $response['message'] = "Please enter a valid email address";
-        return $response;
-    }
-    if (strlen($password) < 6) {
-        $response['message'] = "Password must be at least 6 characters long";
-        return $response;
-    }
-    if ($password !== $confirm_password) {
-        $response['message'] = "Passwords do not match";
-        return $response;
-    }
-
-    try {
-        $sql  = "SELECT id FROM users WHERE username = :username OR email = :email";
-        $stmt = $conn->prepare($sql);
-        $stmt->execute([
-            ':username' => $username,
-            ':email'    => $email
-        ]);
-        if ($stmt->rowCount() > 0) {
-            $response['message'] = "Username or email already exists";
-            return $response;
-        }
-
-        $hashed = password_hash($password, PASSWORD_DEFAULT);
-        $sql    = "INSERT INTO users (username, email, password)
-                   VALUES (:username, :email, :password)";
-        $stmt   = $conn->prepare($sql);
-        $stmt->execute([
-            ':username' => $username,
-            ':email'    => $email,
-            ':password' => $hashed
-        ]);
-
-        $response['success'] = true;
-        $response['message'] = "Registration successful! You can now login.";
-    } catch (PDOException $e) {
-        $response['message'] = "Database error: " . $e->getMessage();
-    }
-
-    return $response;
-}
 
 // --- Data Table Functions ---
 

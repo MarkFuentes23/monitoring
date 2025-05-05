@@ -29,6 +29,8 @@ function registerUser($conn) {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
+    // Default role for self-registration is employee
+    $role = 'employee';
     
     // Validate inputs
     if (empty($username) || empty($email) || empty($password) || empty($confirm_password)) {
@@ -72,11 +74,12 @@ function registerUser($conn) {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         
         // Insert new user
-        $insertQuery = "INSERT INTO users (username, email, password) VALUES (:username, :email, :password)";
+        $insertQuery = "INSERT INTO users (username, email, password, role) VALUES (:username, :email, :password, :role)";
         $stmt = $conn->prepare($insertQuery);
         $stmt->bindParam(':username', $username);
         $stmt->bindParam(':email', $email);
         $stmt->bindParam(':password', $hashed_password);
+        $stmt->bindParam(':role', $role);
         $stmt->execute();
         
         $_SESSION['success'] = "Registration successful! You can now login.";
@@ -90,38 +93,33 @@ function registerUser($conn) {
     }
 }
 
-// Login user
-
 // Add a new user (admin function)
 function addUser($conn) {
     // Check if admin is logged in
-    if (!isLoggedIn()) {
-        $_SESSION['error'] = "You must be logged in to perform this action";
-        header("Location: ../login.php");
-        exit;
-    }
+
     
     $username = trim($_POST['username']);
     $email = trim($_POST['email']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
+    $role = $_POST['role'] ?? 'employee'; // Get role, default to employee if not set
     
     // Validate inputs
     if (empty($username) || empty($email) || empty($password) || empty($confirm_password)) {
         $_SESSION['error'] = "All fields are required";
-        header("Location: ../dashboard/user_management.php");
+        header("Location: ../register.php");
         exit;
     }
     
     if ($password !== $confirm_password) {
         $_SESSION['error'] = "Passwords do not match";
-        header("Location: ../dashboard/user_management.php");
+        header("Location: ../register.php");
         exit;
     }
     
     if (strlen($password) < 6) {
         $_SESSION['error'] = "Password must be at least 6 characters long";
-        header("Location: ../dashboard/user_management.php");
+        header("Location: ../register.php");
         exit;
     }
     
@@ -140,28 +138,29 @@ function addUser($conn) {
             } else {
                 $_SESSION['error'] = "Email already exists";
             }
-            header("Location: ../dashboard/user_management.php");
+            header("Location: ../register.php");
             exit;
         }
         
         // Hash password
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         
-        // Insert new user
-        $insertQuery = "INSERT INTO users (username, email, password) VALUES (:username, :email, :password)";
+        // Insert new user with role
+        $insertQuery = "INSERT INTO users (username, email, password, role) VALUES (:username, :email, :password, :role)";
         $stmt = $conn->prepare($insertQuery);
         $stmt->bindParam(':username', $username);
         $stmt->bindParam(':email', $email);
         $stmt->bindParam(':password', $hashed_password);
+        $stmt->bindParam(':role', $role);
         $stmt->execute();
         
         $_SESSION['success'] = "User added successfully";
-        header("Location: ../dashboard/user_management.php");
+        header("Location: ../register.php");
         exit;
         
     } catch (PDOException $e) {
         $_SESSION['error'] = "Failed to add user: " . $e->getMessage();
-        header("Location: ../dashboard/user_management.php");
+        header("Location: ../register.php");
         exit;
     }
 }
@@ -169,22 +168,19 @@ function addUser($conn) {
 // Edit existing user
 function editUser($conn) {
     // Check if admin is logged in
-    if (!isLoggedIn()) {
-        $_SESSION['error'] = "You must be logged in to perform this action";
-        header("Location: ../login.php");
-        exit;
-    }
+
     
     $user_id = $_POST['user_id'];
     $username = trim($_POST['username']);
     $email = trim($_POST['email']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
+    $role = $_POST['role'] ?? 'employee'; // Get role, default to employee if not set
     
     // Validate inputs
     if (empty($user_id) || empty($username) || empty($email)) {
         $_SESSION['error'] = "User ID, username and email are required";
-        header("Location: ../dashboard/user_management.php");
+        header("Location: ../register.php");
         exit;
     }
     
@@ -204,7 +200,7 @@ function editUser($conn) {
             } else {
                 $_SESSION['error'] = "Email already exists";
             }
-            header("Location: ../dashboard/user_management.php");
+            header("Location: ../register.php");
             exit;
         }
         
@@ -213,43 +209,44 @@ function editUser($conn) {
             // Password provided, validate and update
             if ($password !== $confirm_password) {
                 $_SESSION['error'] = "Passwords do not match";
-                header("Location: ../dashboard/user_management.php");
+                header("Location: ../register.php");
                 exit;
             }
             
             if (strlen($password) < 6) {
                 $_SESSION['error'] = "Password must be at least 6 characters long";
-                header("Location: ../dashboard/user_management.php");
+                header("Location: ../register.php");
                 exit;
             }
             
             // Hash new password
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
             
-            // Update with password
-            $updateQuery = "UPDATE users SET username = :username, email = :email, password = :password WHERE id = :user_id";
+            // Update with password and role
+            $updateQuery = "UPDATE users SET username = :username, email = :email, password = :password, role = :role WHERE id = :user_id";
             $stmt = $conn->prepare($updateQuery);
             $stmt->bindParam(':password', $hashed_password);
         } else {
-            // Update without password
-            $updateQuery = "UPDATE users SET username = :username, email = :email WHERE id = :user_id";
+            // Update without password but with role
+            $updateQuery = "UPDATE users SET username = :username, email = :email, role = :role WHERE id = :user_id";
             $stmt = $conn->prepare($updateQuery);
         }
         
         $stmt->bindParam(':username', $username);
         $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':role', $role);
         $stmt->bindParam(':user_id', $user_id);
         $stmt->execute();
         
         $_SESSION['success'] = "User updated successfully";
-        header("Location: ../dashboard/user_management.php");
+        header("Location: ../register.php");
         exit;
         
     } catch (PDOException $e) {
         $_SESSION['error'] = "Failed to update user: " . $e->getMessage();
-        header("Location: ../dashboard/user_management.php");
+        header("Location: ../register.php");
         exit;
     }
 }
 
-// Logout user
+// Helper functions
