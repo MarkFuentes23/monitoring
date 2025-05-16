@@ -1,0 +1,381 @@
+/* Table header */
+#monthlyAverageTable thead th {
+  font-size: 0.70rem;  /* maliit na header */
+}
+
+/* Table body */
+#monthlyAverageTable tbody td {
+  font-size: 0.70rem;  /* mas maliit pa ang body text */
+}
+
+/* Search box at length dropdown label at control */
+#monthlyAverageTable_wrapper .dataTables_filter label,
+#monthlyAverageTable_wrapper .dataTables_length label {
+  font-size: 0.7rem;
+}
+#monthlyAverageTable_wrapper .dataTables_filter input,
+#monthlyAverageTable_wrapper .dataTables_length select {
+  font-size: 0.7rem;
+  padding: 0.25em 0.4em;  /* bawasan ang padding para mas compact */
+  height: auto;
+}
+
+/* Info text ("Showing X to Y of Z entries") */
+#monthlyAverageTable_wrapper .dataTables_info {
+  font-size: 0.7rem;
+}
+
+/* Pagination buttons */
+#monthlyAverageTable_wrapper .dataTables_paginate .paginate_button {
+  font-size: 0.7rem;
+}
+/* Active/current page button */
+#monthlyAverageTable_wrapper .dataTables_paginate .paginate_button.current {
+  background-color: #0d6efd;  /* Bootstrap primary bg */
+  color: white !important;
+  border: none;
+}
+.badge-sm {
+  font-size: 0.75rem;     
+  padding: 0.25em 0.4em; 
+}
+#monthlyAverageTable .badge {
+  font-size: 0.60rem;
+  padding: 0.25em 0.4em;
+}
+
+.high-latency { background-color: #f8d7da; } 
+.low-latency  { background-color: #d4edda; }   
+.bg-success  { background-color: #d4edda; } 
+
+#refreshBtn{
+  background-color: skyblue;
+}
+/* Enhanced Device Overview Styling */
+.table-hover tr:hover {
+  background-color: rgba(13, 110, 253, 0.04);
+}
+
+/* Reduced card sizing */
+.metric-card {
+  position: relative;
+  padding: 0.75rem;  /* reduced from 1.25rem */
+  border-radius: 0.5rem;  /* reduced from 0.75rem */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all 0.3s ease;
+  min-height: 120px;  /* added minimum height */
+}
+
+.metric-card:hover {
+  transform: translateY(-3px);  /* reduced from -5px */
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.08);  /* reduced shadow */
+}
+
+.metric-card.good {
+  background-color: rgba(25, 135, 84, 0.08);
+  border-left: 3px solid var(--success-color);  /* reduced from 4px */
+}
+
+.metric-card.warning {
+  background-color: rgba(255, 193, 7, 0.08);
+  border-left: 3px solid var(--warning-color);  /* reduced from 4px */
+}
+
+.metric-card.danger {
+  background-color: rgba(220, 53, 69, 0.08);
+  border-left: 3px solid var(--danger-color);  /* reduced from 4px */
+}
+
+.metric-card.info {
+  background-color: rgba(13, 110, 253, 0.08);
+  border-left: 3px solid var(--primary-color);  /* reduced from 4px */
+}
+
+.metric-icon {
+  margin-bottom: 0.5rem;  /* reduced from 0.75rem */
+  font-size: 1.2rem;  /* reduced from 1.5rem */
+}
+
+.metric-card.good .metric-icon {
+  color: var(--success-color);
+}
+
+.metric-card.warning .metric-icon {
+  color: var(--warning-color);
+}
+
+.metric-card.danger .metric-icon {
+  color: var(--danger-color);
+}
+
+.metric-card.info .metric-icon {
+  color: var(--primary-color);
+}
+
+.metric-card h3 {
+  font-size: 1.2rem;  /* reduced from 1.5rem */
+  font-weight: 700;
+  margin-bottom: 0.15rem;  /* reduced from 0.25rem */
+}
+
+.metric-card p {
+  color: var(--text-muted);
+  font-size: 0.75rem;  /* reduced from 0.875rem */
+  font-weight: 500;
+  margin-bottom: 0.25rem;  /* added smaller bottom margin */
+}
+
+.badge {
+  font-weight: 500;
+  padding: 0.3em 0.5em;  /* reduced from 0.4em 0.65em */
+}
+
+.badge.rounded-pill {
+  padding-left: 0.6em;  /* reduced from 0.75em */
+  padding-right: 0.6em;  /* reduced from 0.75em */
+}
+
+.table-secondary {
+  background-color: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
+}
+
+.fw-medium {
+  font-weight: 500;
+}
+
+/* Existing table styles */
+#offlineTable thead th,
+#latencyTable thead th,
+#monthlyStatsTable thead th {
+  font-size: 0.70rem;
+}
+
+#offlineTable tbody td,
+#latencyTable tbody td,
+#monthlyStatsTable tbody td {
+  font-size: 0.65rem;
+}
+
+#offlineTable_wrapper .dataTables_filter label,
+#offlineTable_wrapper .dataTables_length label,
+#latencyTable_wrapper .dataTables_filter label,
+#latencyTable_wrapper .dataTables_length label,
+#monthlyStatsTable_wrapper .dataTables_filter label,
+#monthlyStatsTable_wrapper .dataTables_length label {
+  font-size: 0.7rem;
+}
+
+#offlineTable_wrapper .dataTables_filter input,
+#offlineTable_wrapper .dataTables_length select,
+#monthlyStatsTable_wrapper .dataTables_filter input,
+#monthlyStatsTable_wrapper .dataTables_length select {
+  font-size: 0.7rem;
+  padding: 0.25em 0.4em;
+  height: auto;
+}
+
+#offlineTable_wrapper .dataTables_info,
+#monthlyStatsTable_wrapper .dataTables_info {
+  font-size: 0.7rem;
+}
+
+#offlineTable_wrapper .dataTables_paginate .paginate_button,
+#monthlyStatsTable_wrapper .dataTables_paginate .paginate_button {
+  font-size: 0.7rem;
+}
+
+#offlineTable_wrapper .dataTables_paginate .paginate_button.current,
+#monthlyStatsTable_wrapper .dataTables_paginate .paginate_button.current {
+  background-color: #0d6efd;
+  color: white !important;
+  border: none;
+}
+
+.badge-sm {
+  font-size: 0.75rem;     
+  padding: 0.25em 0.4em; 
+}
+
+#latencyTable .badge {
+  font-size: 0.60rem;
+  padding: 0.25em 0.4em;
+}
+
+.high-latency { background-color: #f8d7da; } 
+.low-latency { background-color: #d4edda; }   
+.bg-success { background-color: #d4edda; } 
+
+#refreshBtn{
+  background-color: skyblue;
+}
+
+/* Monthly stats specific styles */
+.uptime-excellent { background-color: #d4edda; }
+.uptime-good { background-color: #fff3cd; }
+.uptime-warning { background-color: #ffe5d0; }
+.uptime-critical { background-color: #f8d7da; }
+
+.dt-buttons {
+  margin-bottom: 10px;
+}
+
+.dt-button {
+  font-size: 0.7rem !important;
+  padding: 0.25em 0.5em !important;
+}
+
+.header-actions .dt-buttons .btn {
+  margin-right: 0.3rem;
+}
+.form-select-sm {
+  min-width: 130px;
+}
+
+/* Override DataTables button float & stacking */
+.header-actions .dt-buttons {
+  float: none !important;           /* kill the default float:left */
+  display: inline-flex !important;  /* lay out as a flex-row */
+  flex-wrap: nowrap !important;     /* prevent wrapping */
+  gap: 0.3rem;                      /* space between buttons */
+}
+
+/* Tidy up individual buttons */
+.header-actions .dt-buttons .btn {
+  margin: 0;                        /* remove any extra margins */
+}
+/* Add this to your CSS file */
+.clickable-row:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+  transition: background-color 0.2s;
+}
+
+.btn-tiny {
+  font-size: 0.6rem;
+  padding: 0.15rem 0.3rem;
+  line-height: 1;
+}
+
+.fs-7 {
+  font-size: 0.85rem;
+}
+
+/* Enhance table appearance */
+.table-container {
+  overflow-x: auto;
+}
+
+.card {
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.card-header {
+  border-top-left-radius: 0.5rem !important;
+  border-top-right-radius: 0.5rem !important;
+  font-size: 0.95rem;
+  letter-spacing: 0.02rem;
+}
+
+.bg-gradient-dark {
+  background: linear-gradient(135deg, #333 0%, #222 100%);
+}
+
+/* Button styling */
+.btn-sm {
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+.badge-sm {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* Table hover effect */
+#historyTable tbody tr:hover {
+  background-color: rgba(0,0,0,0.02);
+}
+
+/* Consistent with previous styling */
+.fs-7 {
+  font-size: 0.85rem;
+}
+
+.modal-content {
+  border-radius: 0.5rem;
+}
+
+.modal-header {
+  border-top-left-radius: 0.5rem !important;
+  border-top-right-radius: 0.5rem !important;
+}
+
+.bg-gradient-dark {
+  background: linear-gradient(135deg, #333 0%, #222 100%);
+}
+
+.btn-sm {
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+/* Modal specific enhancements */
+#remarksForm .form-control {
+  font-size: 0.85rem;
+  border-radius: 0.25rem;
+}
+
+#remarksForm .form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.15rem rgba(0, 123, 255, 0.15);
+}
+
+#remarksForm .form-control[readonly] {
+  background-color: #f8f9fa;
+}
+
+#offlineLogsList {
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+.remarks-container {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.offline-remark {
+  padding: 6px;
+  border-left: 3px solid #6c757d;
+  background-color: #f8f9fa;
+}
+
+.remarks-container {
+  max-height: 150px;
+  overflow-y: auto;
+}
+.remark-item {
+  border-left: 3px solid #ccc;
+  padding-left: 8px !important;
+}
+.remark-time {
+  font-size: 0.70rem;
+  margin-bottom: 2px;
+}
+.remark-text {
+  padding-left: 5px;
+}

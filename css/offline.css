@@ -1,0 +1,218 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* General styles */
+body {
+font-family: 'Poppins', sans-serif;
+background-color: #f5f7fa;
+color: #333;
+}
+
+.container {
+max-width: 1280px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+font-family: 'Poppins', sans-serif;
+font-weight: 600;
+}
+
+/* Header styles */
+.page-header {
+background-color: #fff;
+padding: 20px;
+border-radius: 8px;
+box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+margin-bottom: 25px;
+}
+
+.header-buttons {
+display: flex;
+gap: 10px;
+}
+
+/* Card styles */
+.card {
+border: none;
+box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+border-radius: 8px;
+margin-bottom: 25px;
+}
+
+.card-header {
+font-weight: 600;
+padding: 15px 20px;
+border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-body {
+padding: 20px;
+}
+
+/* Filter section */
+.filter-section {
+background-color: #fff;
+padding: 20px;
+border-radius: 8px;
+}
+
+.filter-section .form-label {
+font-weight: 500;
+font-size: 0.85rem;
+color: #6c757d;
+}
+
+.filter-section .form-select,
+.filter-section .form-control {
+border-radius: 6px;
+border: 1px solid #e2e8f0;
+padding: 8px 12px;
+font-size: 0.9rem;
+}
+
+.filter-section .form-select:focus,
+.filter-section .form-control:focus {
+border-color: #4361ee;
+box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+}
+
+.filter-actions {
+display: flex;
+gap: 10px;
+}
+
+/* Button styles */
+.btn {
+padding: 8px 16px;
+border-radius: 6px;
+font-weight: 500;
+transition: all 0.3s ease;
+}
+
+.btn-primary {
+background-color: #4361ee;
+border-color: #4361ee;
+}
+
+.btn-primary:hover {
+background-color: #3a56d4;
+border-color: #3a56d4;
+}
+
+.btn-secondary {
+background-color: #718096;
+border-color: #718096;
+}
+
+.btn-secondary:hover {
+background-color: #5a6677;
+border-color: #5a6677;
+}
+
+.btn-danger {
+background-color: #e53e3e;
+border-color: #e53e3e;
+}
+
+.btn-success {
+background-color: #38a169;
+border-color: #38a169;
+}
+
+.btn-outline-secondary {
+color: #718096;
+border-color: #718096;
+}
+
+.btn-outline-secondary:hover {
+background-color: #718096;
+color: #fff;
+}
+
+/* Table styling */
+.table-container {
+overflow-x: auto;
+border-radius: 6px;
+}
+
+.table {
+width: 100%;
+margin-bottom: 0;
+}
+
+.table th {
+font-weight: 600;
+color: #4a5568;
+border-bottom: 2px solid #e2e8f0;
+padding: 12px 16px;
+}
+
+.table td {
+padding: 12px 16px;
+vertical-align: middle;
+border-bottom: 1px solid #e2e8f0;
+}
+
+.table tbody tr:hover {
+background-color: #f8fafc;
+}
+
+.badge {
+font-weight: 500;
+padding: 5px 10px;
+border-radius: 4px;
+}
+
+
+.dataTables_length label,
+.dataTables_filter label,
+.dataTables_info,
+.dataTables_paginate .paginate_button {
+font-size: 0.75rem !important;
+}
+.dataTables_length select,
+.dataTables_filter input {
+font-size: 0.75rem !important;
+height: calc(1.5em + .5rem) !important;
+}
+
+/* Table header and cell font-size */
+table.table-sm thead th,
+table.table-sm tbody td {
+font-size: 0.75rem;
+padding: 0.3rem 0.5rem;
+font-family: 'poppins', Courier, monospace  !important; 
+}
+
+/* Only Previous/Next */
+div.dataTables_wrapper div.dataTables_paginate ul.pagination li.page-item .page-link {
+font-size: 0.75rem !important;        /* smaller text */
+padding: 0.25rem 0.5rem !important;   /* tighter buttons */
+min-width: auto !important;           /* let the width shrink to content */
+line-height: 1.2 !important;          /* center text vertically */
+}
+
+.card-body{
+font-size: 12px;
+}
+
+
+/* Print styles */
+@media print {
+.no-print {
+    display: none !important;
+}
+
+.table-container {
+    overflow-x: visible;
+}
+
+.table, .table th, .table td {
+    border: 1px solid #ddd;
+}
+
+body {
+    font-family: 'Poppins', sans-serif !important;
+    padding: 20px;
+}
+}

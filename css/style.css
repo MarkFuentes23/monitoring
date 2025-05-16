@@ -1,0 +1,337 @@
+:root {
+  --primary-blue: #3462d8;
+  --accent-yellow: #fbbf24;
+  --text-dark: #1e293b;
+  --text-light: #f8fafc;
+  --white: #ffffff;
+  --light-gray: #f1f5f9;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  font-family: 'Poppins', Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+.login-container {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: url('buildnet.jpg') no-repeat center center fixed;
+  background-size: cover;
+  background-position: center;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+.form-container {
+  position: relative;
+  z-index: 2;
+  width: 90%;
+  max-width: 480px;
+}
+
+.auth-form {
+  width: 100%;
+  padding: 3rem;
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(0);
+  transition: all 0.5s ease;
+  animation: fadeIn 1s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-form:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 2rem;
+  /* kung gusto ng fixed container size:
+  width: 150px;
+  margin: 0 auto 2rem;
+  */
+}
+
+.logo-image {
+  display: block;
+  max-width: 150px;  /* pwede mong baguhin kung gusto mo mas malaki o maliit */
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+.logo-title {
+  /* kung hindi mo na kailangan yung text gradient, puwede mong i-comment/delete ito */
+  color: var(--primary-blue);
+  font-weight: 700;
+  font-size: 2.5rem;
+  margin: 0;
+  /* background: none; */
+  /* -webkit-background-clip: none; */
+  /* background-clip: none; */
+  /* -webkit-text-fill-color: var(--primary-blue); */
+}
+
+.tagline {
+  color: var(--text-dark);
+  font-size: 1rem;
+  margin-top: 0.5rem;
+  opacity: 0.8;
+}
+
+.form-group {
+  margin-bottom: 1.8rem;
+  position: relative;
+}
+
+.form-control {
+  width: 100%;
+  padding: 1rem 1rem 1rem 3rem;
+  border: 2px solid var(--light-gray);
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background-color: var(--white);
+  color: var(--text-dark);
+}
+
+.form-control:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 4px rgba(52, 98, 216, 0.15);
+  outline: none;
+}
+
+.form-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary-blue);
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus + .form-icon {
+  color: var(--primary-blue);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.btn-primary {
+  width: 100%;
+  background: var(--primary-blue);
+  color: var(--white);
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(52, 98, 216, 0.3);
+}
+
+.btn-primary:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.6s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(52, 98, 216, 0.4);
+}
+
+.btn-primary:hover:before {
+  left: 100%;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  color: var(--text-dark);
+}
+
+.remember-me input {
+  margin-right: 0.5rem;
+  accent-color: var(--primary-blue);
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.remember-me label {
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* Yellow accent elements */
+.yellow-dot {
+  position: absolute;
+  background-color: var(--accent-yellow);
+  border-radius: 50%;
+  filter: blur(1px);
+  z-index: 0;
+  opacity: 0.7;
+  animation: float 6s ease-in-out infinite;
+}
+
+.dot-1 {
+  width: 30px;
+  height: 30px;
+  top: 15%;
+  right: 10%;
+  animation-delay: 0s;
+}
+
+.dot-2 {
+  width: 50px;
+  height: 50px;
+  bottom: 20%;
+  right: 15%;
+  animation-delay: 1s;
+}
+
+.dot-3 {
+  width: 25px;
+  height: 25px;
+  top: 30%;
+  left: 5%;
+  animation-delay: 2s;
+}
+
+/* Animations (kung gamit mo pa rin animate.css, pwedeng i-delete ito part) */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+
+/* Animations */
+@keyframes float {
+    0% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-20px) rotate(10deg);
+    }
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        text-shadow: 0 0 5px rgba(52, 98, 216, 0.5);
+    }
+    100% {
+        text-shadow: 0 0 20px rgba(52, 98, 216, 0.8);
+    }
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .auth-form {
+        padding: 2rem;
+    }
+    
+    .logo-title {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .form-container {
+        width: 90%;
+    }
+    
+    .auth-form {
+        padding: 1.5rem;
+    }
+}
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0; /* optional spacing */
+}
+
+.logo-image {
+  max-width: 250px; /* liit ng logo */
+  height: auto;
+}
