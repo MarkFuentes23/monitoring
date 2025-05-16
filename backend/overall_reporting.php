@@ -32,6 +32,55 @@ function getGlobalDailyStats($filters = []) {
         $whereClause .= " AND p.ip_id = ?";
         $params[]    = $ip_id;
     }
+
+/**
+ * Calculate overall monthly statistics from IP-specific stats
+ *
+ * @param array $ip_stats Array of IP monthly statistics
+ * @return array Overall monthly statistics
+ */
+function calculateOverallMonthlyStats(array $ip_stats): array {
+    $overall = [
+        'total_devices'       => count($ip_stats),
+        'avg_latency'         => 0,
+        'total_offline_count' => 0,
+        'total_checks'        => 0,
+        'avg_uptime_percent'  => 0,
+    ];
+
+    if ($overall['total_devices'] > 0) {
+        $latency_sum = $offline_sum = $checks_sum = 0;
+        foreach ($ip_stats as $ip) {
+            $latency_sum += $ip['monthly_avg_latency'] ?? 0;
+            $offline_sum += $ip['total_offline']        ?? 0;
+            $checks_sum  += $ip['total_checks']         ?? 0;
+        }
+
+        $overall['avg_latency']         = $latency_sum / $overall['total_devices'];
+        $overall['total_offline_count'] = $offline_sum;
+        $overall['total_checks']        = $checks_sum;
+        $overall['avg_uptime_percent']  = $checks_sum > 0
+            ? 100 - (($offline_sum / $checks_sum) * 100)
+            : 0;
+
+        $u = $overall['avg_uptime_percent'];
+        if      ($u == 100) {
+            $overall['status_text']  = 'Excellent';
+            $overall['status_class'] = 'bg-success text-white';
+        } elseif ($u >= 99.5) {
+            $overall['status_text']  = 'Very Good';
+            $overall['status_class'] = 'bg-success text-white';
+        } elseif ($u >= 95) {
+            $overall['status_text']  = 'Average';
+            $overall['status_class'] = 'bg-warning';
+        } else {
+            $overall['status_text']  = 'Poor';
+            $overall['status_class'] = 'bg-danger text-white';
+        }
+    }
+
+    return $overall;
+}
     if (!empty($location)) {
         $whereClause .= " AND a.location = ?";
         $params[]    = $location;
@@ -64,6 +113,23 @@ function getGlobalDailyStats($filters = []) {
     // Initialize containers
     $daily_stats      = [];
     $ip_monthly_stats = [];
+
+    // Fetch all excluded remarks for this month (for optimization)
+    $excludedRemarksStmt = $conn->prepare(
+        "SELECT ip_id, COUNT(*) as exclusion_count 
+         FROM offline_remarks 
+         WHERE is_excluded = 1
+         AND YEAR(date_from) = ? AND MONTH(date_from) = ?
+         GROUP BY ip_id"
+    );
+    $excludedRemarksStmt->execute([$selectedYear, $selectedMonth]);
+    $excludedRemarks = $excludedRemarksStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Create simple lookup array for excluded counts by IP ID
+    $exclusionCounts = [];
+    foreach ($excludedRemarks as $remark) {
+        $exclusionCounts[$remark['ip_id']] = $remark['exclusion_count'];
+    }
 
     foreach ($ips as $ip) {
         $key = $ip['id'];
@@ -175,6 +241,15 @@ function getGlobalDailyStats($filters = []) {
                     $offlineCount++;
                 }
             }
+            
+            // Check if this date has any excluded offline remarks
+            $hasExclusions = isset($excludedDates[$key]) && in_array($date_key, $excludedDates[$key]);
+            
+            // If there are exclusions for this date, reduce the offline count by 1
+            // (or set to 0 if already 0)
+            if ($hasExclusions && $offlineCount > 0) {
+                $offlineCount--;
+            }
 
             $uptime_percent = 100 - (($offlineCount / $intervalsPerDay) * 100);
 
@@ -190,7 +265,8 @@ function getGlobalDailyStats($filters = []) {
                 'offline_count'  => $offlineCount,
                 'offline_hours'  => round($offlineDurationSec / 3600, 2),
                 'total_checks'   => $dayData['total_checks'],
-                'uptime_percent' => $uptime_percent
+                'uptime_percent' => $uptime_percent,
+                'has_exclusions' => $hasExclusions
             ];
 
             // Daily status text/class
@@ -213,13 +289,31 @@ function getGlobalDailyStats($filters = []) {
             $ip_monthly_stats[$key]['days_with_data']   ++;
             $ip_monthly_stats[$key]['sum_daily_uptime'] += $uptime_percent;
         }
+        
+        // Apply any exclusions at the IP level (directly reducing total_offline)
+        if (isset($exclusionCounts[$key])) {
+            // Store the original count before adjustment
+            $ip_monthly_stats[$key]['original_offline'] = $ip_monthly_stats[$key]['total_offline'];
+            
+            // Reduce by number of exclusions, but never below zero
+            $ip_monthly_stats[$key]['total_offline'] = max(0, $ip_monthly_stats[$key]['total_offline'] - $exclusionCounts[$key]);
+            
+            // Flag that this IP has exclusions
+            $ip_monthly_stats[$key]['has_exclusions'] = true;
+            $ip_monthly_stats[$key]['exclusion_count'] = $exclusionCounts[$key];
+        }
     }
 
     // Finalize monthly stats
     foreach ($ip_monthly_stats as $k => &$m) {
         if ($m['days_with_data'] > 0) {
-            $m['monthly_avg_latency']    = $m['total_latency'] / $m['days_with_data'];
-            $m['monthly_uptime_percent'] = $m['sum_daily_uptime'] / $m['days_with_data'];
+            $m['monthly_avg_latency'] = $m['total_latency'] / $m['days_with_data'];
+            
+            // FIXED: Calculate monthly uptime percentage correctly
+            // Formula: 100 - (total_offline / (days_with_data * intervalsPerDay)) * 100
+            $totalPossibleIntervals = $m['days_with_data'] * $intervalsPerDay;
+            $m['monthly_uptime_percent'] = 100 - (($m['total_offline'] / $totalPossibleIntervals) * 100);
+            
             $u = $m['monthly_uptime_percent'];
             if      ($u == 100) {
                 $m['monthly_status_class'] = 'bg-success text-white'; $m['monthly_status_text']  = 'Excellent';
@@ -249,53 +343,4 @@ function getGlobalDailyStats($filters = []) {
         'monthly_total'    => calculateOverallMonthlyStats(array_values($ip_monthly_stats)),
         'total_days'       => count($daily_array)
     ];
-}
-
-/**
- * Calculate overall monthly statistics from IP-specific stats
- *
- * @param array $ip_stats Array of IP monthly statistics
- * @return array Overall monthly statistics
- */
-function calculateOverallMonthlyStats(array $ip_stats): array {
-    $overall = [
-        'total_devices'       => count($ip_stats),
-        'avg_latency'         => 0,
-        'total_offline_count' => 0,
-        'total_checks'        => 0,
-        'avg_uptime_percent'  => 0,
-    ];
-
-    if ($overall['total_devices'] > 0) {
-        $latency_sum = $offline_sum = $checks_sum = 0;
-        foreach ($ip_stats as $ip) {
-            $latency_sum += $ip['monthly_avg_latency'] ?? 0;
-            $offline_sum += $ip['total_offline']        ?? 0;
-            $checks_sum  += $ip['total_checks']         ?? 0;
-        }
-
-        $overall['avg_latency']         = $latency_sum / $overall['total_devices'];
-        $overall['total_offline_count'] = $offline_sum;
-        $overall['total_checks']        = $checks_sum;
-        $overall['avg_uptime_percent']  = $checks_sum > 0
-            ? 100 - (($offline_sum / $checks_sum) * 100)
-            : 0;
-
-        $u = $overall['avg_uptime_percent'];
-        if      ($u == 100) {
-            $overall['status_text']  = 'Excellent';
-            $overall['status_class'] = 'bg-success text-white';
-        } elseif ($u >= 99.5) {
-            $overall['status_text']  = 'Very Good';
-            $overall['status_class'] = 'bg-success text-white';
-        } elseif ($u >= 95) {
-            $overall['status_text']  = 'Average';
-            $overall['status_class'] = 'bg-warning';
-        } else {
-            $overall['status_text']  = 'Poor';
-            $overall['status_class'] = 'bg-danger text-white';
-        }
-    }
-
-    return $overall;
 }

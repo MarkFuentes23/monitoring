@@ -272,92 +272,102 @@ $summary        = $dailyStats['monthly_total'];
     </div>
 
     <!-- Daily Statistics Table -->
-<div class="card mb-4 shadow-sm">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <!-- always just month + year -->
-    <h5 id="reportTitle" class="card-title mb-0">
-      Monthly Report – <?= date("F Y", mktime(0,0,0,$filters['month'],1,$filters['year'])) ?>
-    </h5>
-    <div id="dailyExportButtons"></div>
-  </div>
-  <div class="card-body">
-    <div class="table-responsive">
-      <table id="dailyStatsTable" class="table table-bordered table-striped mb-0">
-        <thead>
-          <tr class="table-secondary">
-            <th>IP Address</th>
-            <th>Description</th>
-            <th>Location</th>
-            <th>Category</th>
-            <th>Days Pinged</th>
-            <th>Total Offline</th>
-            <th>Avg Latency (ms)</th>
-            <th>Monthly Avg Uptime %</th>
-            <th>Status</th>
-            <th>Offline Remarks</th>
-          </tr>
-        </thead>
-        <tbody class="small">
-          <?php foreach($dailyStats['ip_monthly_stats'] as $device): 
-            // build the clickable URL using the numeric id
-            $href = 'report.php?report=' . (int)$device['id'];
+    <div class="card mb-4 shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 id="reportTitle" class="card-title mb-0">
+              Monthly Report – <?= date("F Y", mktime(0,0,0,$filters['month'],1,$filters['year'])) ?>
+            </h5>
+            <div id="dailyExportButtons"></div>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table id="dailyStatsTable" class="table table-bordered table-striped mb-0">
+                <thead>
+                  <tr class="table-secondary">
+                    <th>IP Address</th>
+                    <th>Description</th>
+                    <th>Location</th>
+                    <th>Category</th>
+                    <th>Days Pinged</th>
+                    <th>Total Offline</th>
+                    <th>Avg Latency (ms)</th>
+                    <th>Monthly Avg Uptime %</th>
+                    <th>Status</th>
+                    <th>Offline Remarks</th>
+                  </tr>
+                </thead>
+                <tbody class="small">
+                  <?php foreach($dailyStats['ip_monthly_stats'] as $device): 
+                    // build the clickable URL using the numeric id
+                    $href = 'report.php?report=' . (int)$device['id'];
 
-            // fetch offline remarks as before
-            $remarks_query = "SELECT * FROM offline_remarks 
-                              WHERE ip_address = :ip_address 
-                              ORDER BY date_from DESC";
-            $stmt = $conn->prepare($remarks_query);
-            $stmt->bindParam(':ip_address', $device['ip_address'], PDO::PARAM_STR);
-            $stmt->execute();
-            $remarks = $stmt->fetchAll(PDO::FETCH_ASSOC);
-          ?>
-            <tr data-href="<?= $href ?>">
-              <td><?= htmlspecialchars($device['ip_address']) ?></td>
-              <td><?= htmlspecialchars($device['description']) ?></td>
-              <td><?= htmlspecialchars($device['location']) ?></td>
-              <td><?= htmlspecialchars($device['category']) ?></td>
-              <td><?= $device['days_with_data'] ?></td>
-              <td><?= $device['total_offline'] ?></td>
-              <td><?= number_format($device['monthly_avg_latency'], 2) ?></td>
-              <td class="<?= $device['monthly_status_class'] ?>">
-                <?= number_format($device['monthly_uptime_percent'], 2) ?>%
-              </td>
-              <td>
-                <span class="badge <?= $device['monthly_status_class'] ?>">
-                  <?= $device['monthly_status_text'] ?>
-                </span>
-              </td>
-              <td>
-                <?php if (count($remarks) > 0): ?>
-                  <div class="remarks-container">
-                    <?php foreach($remarks as $remark): ?>
-                      <div class="offline-remark mb-2">
-                        <div class="d-flex align-items-start">
-                          <div>
-                            <div class="remarks" style="font-size: 10px;">
-                              <?= date('M d g:ia', strtotime($remark['date_from'])) ?>
-                               – <?= date('g:ia', strtotime($remark['date_to'])) ?>
-                            </div>
-                            <div class="fw-bold" style="font-size: 10px;">
-                              <?= htmlspecialchars($remark['remarks']) ?>
-                            </div>
+                    // fetch offline remarks for this device
+                    $remarks_query = "SELECT * FROM offline_remarks 
+                                      WHERE ip_id = :ip_id
+                                      ORDER BY date_from DESC";
+                    $stmt = $conn->prepare($remarks_query);
+                    $stmt->bindParam(':ip_id', $device['id'], PDO::PARAM_INT);
+                    $stmt->execute();
+                    $remarks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                  ?>
+                    <tr data-href="<?= $href ?>">
+                      <td><?= htmlspecialchars($device['ip_address']) ?></td>
+                      <td><?= htmlspecialchars($device['description']) ?></td>
+                      <td><?= htmlspecialchars($device['location']) ?></td>
+                      <td><?= htmlspecialchars($device['category']) ?></td>
+                      <td><?= $device['days_with_data'] ?></td>
+                      <td>
+                        <?= $device['total_offline'] ?>
+                        <?php if(isset($device['has_exclusions']) && $device['has_exclusions']): ?>
+                          <span class="badge bg-info ms-1" title="<?= $device['exclusion_count'] ?> offline events excluded">
+                            <i class="fas fa-minus-circle"></i> <?= $device['exclusion_count'] ?>
+                          </span>
+                        <?php endif; ?>
+                      </td>
+                      <td><?= number_format($device['monthly_avg_latency'], 2) ?></td>
+                      <td class="<?= $device['monthly_status_class'] ?>">
+                        <?= number_format($device['monthly_uptime_percent'], 2) ?>%
+                      </td>
+                      <td>
+                        <span class="badge <?= $device['monthly_status_class'] ?>">
+                          <?= $device['monthly_status_text'] ?>
+                        </span>
+                      </td>
+                      <td>
+                        <?php if (count($remarks) > 0): ?>
+                          <div class="remarks-container">
+                            <?php foreach($remarks as $remark): ?>
+                              <div class="offline-remark mb-2">
+                                <div class="d-flex align-items-start">
+                                  <div>
+                                    <div class="remarks" style="font-size: 10px;">
+                                      <?= date('M d g:ia', strtotime($remark['date_from'])) ?>
+                                      – <?= date('g:ia', strtotime($remark['date_to'])) ?>
+                                      <?php if($remark['is_excluded']): ?>
+                                        <span class="badge bg-info ms-1" title="This offline event is excluded from calculations">
+                                          Excluded
+                                        </span>
+                                      <?php endif; ?>
+                                    </div>
+                                    <div class="fw-bold" style="font-size: 10px;">
+                                      <?= htmlspecialchars($remark['remarks']) ?>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            <?php endforeach; ?>
                           </div>
-                        </div>
-                      </div>
-                    <?php endforeach; ?>
-                  </div>
-                <?php else: ?>
-                  <span class="text-muted">No remarks</span>
-                <?php endif; ?>
-              </td>
-            </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
+                        <?php else: ?>
+                          <span class="text-muted">No remarks</span>
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 <!-- Add to your CSS file or within a <style> block -->
 <style>
   #dailyStatsTable tbody tr {
