@@ -1,8 +1,5 @@
 <div class="sidebar col-md-3 col-lg-2 d-md-block" id="sidebar">
     <div class="sidebar-header">
-        <div class="logo-container">
-            <img src="../logo.png" alt="BCI Logo" class="logo-image">
-        </div>
         <button id="sidebarToggle" class="btn btn-link toggle-btn">
         <i class="fas fa-bars burger-icon"></i>
         </button>
@@ -10,7 +7,7 @@
     <div class="position-sticky">
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'dashboard.php') ? 'active' : ''; ?>" href="dashboard.php">
+                <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'dashboard.php') ? 'active' : ''; ?>" href="/views/dashboard.php">
                     <i class="fas fa-home-alt"></i> <span class="menu-text">Dashboard</span>
                 </a>
             </li>
